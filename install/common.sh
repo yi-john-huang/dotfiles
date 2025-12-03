@@ -165,6 +165,25 @@ install_terraform() {
     log_info "✓ Terraform installed"
 }
 
+# Install AWS CLI
+install_aws_cli() {
+    if check_command aws; then
+        log_info "✓ AWS CLI already installed"
+        return 0
+    fi
+    
+    log_info "Installing AWS CLI..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install awscli
+    else
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip -q awscliv2.zip
+        sudo ./aws/install
+        rm -rf aws awscliv2.zip
+    fi
+    log_info "✓ AWS CLI installed"
+}
+
 # Main installation function
 install_common_tools() {
     log_info "Starting common tools installation..."
@@ -178,6 +197,7 @@ install_common_tools() {
     install_kubectx
     install_k9s
     install_terraform
+    install_aws_cli
     
     log_info "✓ Common tools installation complete"
 }

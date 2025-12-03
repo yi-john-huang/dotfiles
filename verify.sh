@@ -73,6 +73,7 @@ verify_all() {
     check_tool kubectx "kubectx"
     check_tool k9s "k9s"
     check_tool terraform "Terraform"
+    check_tool aws "AWS CLI"
     
     # Development tools
     check_tool node "Node.js"

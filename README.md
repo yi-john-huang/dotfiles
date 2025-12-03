@@ -60,6 +60,43 @@ cd ~/.dotfiles
 ### Platform-Specific Tools
 
 **macOS:**
+
+- Homebrew (package manager)
+- iTerm2 (terminal)
+- Colima (container runtime)
+
+**Ubuntu:**
+
+- build-essential
+- System packages (curl, wget, git, etc.)
+
+### Common CLI Tools
+
+- jq, yq (JSON/YAML processors)
+- ripgrep, bat (modern grep/cat)
+- zellij (terminal multiplexer)
+- kubectl, kubectx, k9s (Kubernetes tools)
+- Terraform (infrastructure as code)
+
+### Development Tools
+
+- **Node.js/TypeScript**: nvm + latest LTS
+- **Python**: uv package manager
+- **Go**: Latest stable
+- **Java**: OpenJDK 17
+
+### Configurations
+
+- **Shell**: .bashrc and .zshrc with aliases and PATH
+- **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
+
+## Usage
+
+### Basic Installation
+
+### Platform-Specific Tools
+
+**macOS:**
 - Homebrew (package manager)
 - iTerm2 (terminal)
 - Colima (container runtime)
