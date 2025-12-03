@@ -122,6 +122,40 @@ cd ~/.dotfiles
 - **Shell**: .bashrc and .zshrc with aliases and PATH
 - **Git**: .gitconfig with aliases and .gitignore_global
 
+## x86_64 Container Testing
+
+Test containers on x86_64 architecture (useful for Apple Silicon):
+
+### Start x86_64 environment
+```bash
+./scripts/x86-start.sh
+```
+
+### Build x86_64 image
+```bash
+./scripts/x86-build.sh -t myapp:x86 .
+```
+
+### Run docker-compose tests
+```bash
+./scripts/x86-compose.sh up
+```
+
+### Stop x86_64 environment
+```bash
+./scripts/x86-stop.sh
+```
+
+### Configuration
+Override defaults with environment variables:
+```bash
+COLIMA_CPU=4 COLIMA_MEM=8 COLIMA_DISK=20 ./scripts/x86-start.sh
+```
+
+- `COLIMA_CPU`: CPU cores (default: 2)
+- `COLIMA_MEM`: Memory in GB (default: 4)
+- `COLIMA_DISK`: Disk size in GB (default: 10)
+
 ## Usage
 
 ### Basic Installation

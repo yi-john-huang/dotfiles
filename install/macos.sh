@@ -43,12 +43,29 @@ install_iterm2() {
 install_colima() {
     if check_command colima; then
         log_info "✓ Colima already installed"
-        return 0
+    else
+        log_info "Installing Colima..."
+        brew install colima docker docker-compose
+        log_info "✓ Colima installed"
     fi
     
-    log_info "Installing Colima..."
-    brew install colima docker docker-compose
-    log_info "✓ Colima installed"
+    # Install QEMU for x86_64 emulation
+    if ! check_command qemu-img; then
+        log_info "Installing QEMU for x86_64 emulation..."
+        brew install qemu
+        log_info "✓ QEMU installed"
+    else
+        log_info "✓ QEMU already installed"
+    fi
+    
+    # Install Lima guest agents for x86_64 support
+    if ! brew list lima-additional-guestagents &> /dev/null; then
+        log_info "Installing Lima guest agents for x86_64..."
+        brew install lima-additional-guestagents
+        log_info "✓ Lima guest agents installed"
+    else
+        log_info "✓ Lima guest agents already installed"
+    fi
 }
 
 # Main installation function

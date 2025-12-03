@@ -83,6 +83,21 @@ verify_all() {
     if [ "$IS_MACOS" = "true" ]; then
         check_tool brew "Homebrew"
         check_tool colima "Colima"
+        
+        # Verify x86_64 emulation capability
+        if command -v colima &> /dev/null; then
+            info "Testing x86_64 emulation capability..."
+            if colima start --profile x86-test --arch x86_64 --cpu 1 --memory 1 --disk 5 &> /dev/null; then
+                if docker --context colima-x86-test run --rm alpine uname -m 2>/dev/null | grep -q x86_64; then
+                    success "x86_64 emulation verified"
+                else
+                    warn "x86_64 emulation test failed"
+                fi
+                colima delete --profile x86-test --force &> /dev/null
+            else
+                warn "Could not start x86_64 test profile"
+            fi
+        fi
     fi
     
     # Common tools
