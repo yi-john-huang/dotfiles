@@ -1,111 +1,201 @@
-# Mathias’s dotfiles
+# Simplified Dotfiles
 
-![Screenshot of my shell prompt](https://i.imgur.com/EkEtphC.png)
+A streamlined, all-in-one dotfiles system with automated bootstrap for quick laptop setup.
 
-## Installation
+## Features
 
-**Warning:** If you want to give these dotfiles a try, you should first fork this repository, review the code, and remove things you don’t want or need. Don’t blindly use my settings unless you know what that entails. Use at your own risk!
+- **One Command Setup**: Get production-ready in under 30 minutes
+- **Cross-Platform**: Supports macOS (Apple Silicon) and Ubuntu 24 LTS (x86_64)
+- **Idempotent**: Safe to run multiple times
+- **Comprehensive**: Installs all development tools and configurations
+- **Customizable**: Use `~/.extra` for personal overrides
 
-### Using Git and the bootstrap script
-
-You can clone the repository wherever you want. (I like to keep it in `~/Projects/dotfiles`, with `~/dotfiles` as a symlink.) The bootstrapper script will pull in the latest version and copy the files to your home folder.
+## Quick Start
 
 ```bash
-git clone https://github.com/mathiasbynens/dotfiles.git && cd dotfiles && source bootstrap.sh
+git clone https://github.com/yourusername/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
+./bootstrap.sh
 ```
 
-To update, `cd` into your local `dotfiles` repository and then:
+## What Gets Installed
 
+### Platform-Specific Tools
+
+**macOS:**
+- Homebrew (package manager)
+- iTerm2 (terminal)
+- Colima (container runtime)
+
+**Ubuntu:**
+- build-essential
+- System packages (curl, wget, git, etc.)
+
+### Common CLI Tools
+- jq, yq (JSON/YAML processors)
+- ripgrep, bat (modern grep/cat)
+- zellij (terminal multiplexer)
+- kubectl, kubectx, k9s (Kubernetes tools)
+- Terraform (infrastructure as code)
+
+### Development Tools
+- **Node.js/TypeScript**: nvm + latest LTS
+- **Python**: uv package manager
+- **Go**: Latest stable
+- **Java**: OpenJDK 17
+
+### Configurations
+- **Shell**: .bashrc and .zshrc with aliases and PATH
+- **Git**: .gitconfig with aliases and .gitignore_global
+
+## Usage
+
+### Basic Installation
 ```bash
-source bootstrap.sh
+./bootstrap.sh
 ```
 
-Alternatively, to update while avoiding the confirmation prompt:
-
+### Force Reinstall
 ```bash
-set -- -f; source bootstrap.sh
+./bootstrap.sh --force
 ```
 
-### Git-free install
-
-To install these dotfiles without Git:
-
+### Skip Verification
 ```bash
-cd; curl -#L https://github.com/mathiasbynens/dotfiles/tarball/main | tar -xzv --strip-components 1 --exclude={README.md,bootstrap.sh,.osx,LICENSE-MIT.txt}
+./bootstrap.sh --skip-verify
 ```
 
-To update later on, just run that command again.
-
-### Specify the `$PATH`
-
-If `~/.path` exists, it will be sourced along with the other files, before any feature testing (such as [detecting which version of `ls` is being used](https://github.com/mathiasbynens/dotfiles/blob/aff769fd75225d8f2e481185a71d5e05b76002dc/.aliases#L21-L26)) takes place.
-
-Here’s an example `~/.path` file that adds `/usr/local/bin` to the `$PATH`:
-
+### Verify Installation
 ```bash
-export PATH="/usr/local/bin:$PATH"
+./verify.sh
 ```
 
-### Add custom commands without creating a new fork
+## Architecture
 
-If `~/.extra` exists, it will be sourced along with the other files. You can use this to add a few custom commands without the need to fork this entire repository, or to add commands you don’t want to commit to a public repository.
+```
+.
+├── bootstrap.sh          # Main entry point
+├── verify.sh            # Verification script
+├── lib/                 # Core utilities
+│   ├── detect.sh       # Platform detection
+│   └── utils.sh        # Logging and helpers
+├── install/            # Installation modules
+│   ├── macos.sh       # macOS-specific
+│   ├── ubuntu.sh      # Ubuntu-specific
+│   ├── common.sh      # Cross-platform tools
+│   └── dev-tools.sh   # Language runtimes
+├── config/            # Configuration files
+│   ├── shell/        # .bashrc, .zshrc
+│   └── git/          # Git config
+├── tests/            # Test files (bats)
+└── deprecated/       # Old dotfiles (reference only)
+```
 
-My `~/.extra` looks something like this:
+## Customization
+
+### User-Specific Settings
+
+Create `~/.extra` for personal configurations:
 
 ```bash
+# Example ~/.extra
+export CUSTOM_VAR="value"
+alias myalias="command"
+
 # Git credentials
-# Not in the repository, to prevent people from accidentally committing under my name
-GIT_AUTHOR_NAME="Mathias Bynens"
-GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
-git config --global user.name "$GIT_AUTHOR_NAME"
-GIT_AUTHOR_EMAIL="mathias@mailinator.com"
-GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-git config --global user.email "$GIT_AUTHOR_EMAIL"
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
 ```
 
-You could also use `~/.extra` to override settings, functions and aliases from my dotfiles repository. It’s probably better to [fork this repository](https://github.com/mathiasbynens/dotfiles/fork) instead, though.
+This file is sourced by shell configs but not tracked in the repository.
 
-### Sensible macOS defaults
+## Requirements
 
-When setting up a new Mac, you may want to set some sensible macOS defaults:
+### macOS
+- macOS 11+ (Big Sur or later)
+- Apple Silicon (ARM64) or Intel (x86_64)
+- Command Line Tools (installed automatically)
+
+### Ubuntu
+- Ubuntu 24.04 LTS
+- x86_64 architecture
+- sudo access
+
+## Testing
+
+Tests use [bats-core](https://github.com/bats-core/bats-core):
 
 ```bash
-./.macos
+# Install bats (macOS)
+brew install bats-core
+
+# Install bats (Ubuntu)
+sudo apt-get install bats
+
+# Run tests
+bats tests/
 ```
 
-### Install Homebrew formulae
+### Testing on UTM (Ubuntu Emulation)
 
-When setting up a new Mac, you may want to install some common [Homebrew](https://brew.sh/) formulae (after installing Homebrew, of course):
+For testing on Ubuntu without a physical machine, use UTM:
 
 ```bash
-./brew.sh
+# Run the UTM setup script
+./setup-utm-ubuntu.sh
+
+# Follow the printed instructions to:
+# 1. Create VM in UTM with 2 CPUs, 4GB RAM, 40GB storage
+# 2. Install Ubuntu 24 LTS from downloaded ISO
+# 3. Test dotfiles bootstrap in the VM
 ```
 
-Some of the functionality of these dotfiles depends on formulae installed by `brew.sh`. If you don’t plan to run `brew.sh`, you should look carefully through the script and manually install any particularly important ones. A good example is Bash/Git completion: the dotfiles use a special version from Homebrew.
+The script will:
+- Download Ubuntu 24.04 LTS ISO
+- Provide step-by-step VM creation instructions
+- Configure VM with optimal settings for testing
 
-## Feedback
+## Troubleshooting
 
-Suggestions/improvements
-[welcome](https://github.com/mathiasbynens/dotfiles/issues)!
+### Homebrew Installation Fails (macOS)
+```bash
+# Install Command Line Tools manually
+xcode-select --install
+```
 
-## Author
+### Permission Denied Errors (Ubuntu)
+```bash
+# Ensure you have sudo access
+sudo -v
+```
 
-| [![twitter/mathias](http://gravatar.com/avatar/24e08a9ea84deb17ae121074d0f17125?s=70)](http://twitter.com/mathias "Follow @mathias on Twitter") |
-|---|
-| [Mathias Bynens](https://mathiasbynens.be/) |
+### Tool Not Found After Installation
+```bash
+# Restart your shell
+exec $SHELL
 
-## Thanks to…
+# Or source the config
+source ~/.bashrc  # or ~/.zshrc
+```
 
-* @ptb and [his _macOS Setup_ repository](https://github.com/ptb/mac-setup)
-* [Ben Alman](http://benalman.com/) and his [dotfiles repository](https://github.com/cowboy/dotfiles)
-* [Cătălin Mariș](https://github.com/alrra) and his [dotfiles repository](https://github.com/alrra/dotfiles)
-* [Gianni Chiappetta](https://butt.zone/) for sharing his [amazing collection of dotfiles](https://github.com/gf3/dotfiles)
-* [Jan Moesen](http://jan.moesen.nu/) and his [ancient `.bash_profile`](https://gist.github.com/1156154) + [shiny _tilde_ repository](https://github.com/janmoesen/tilde)
-* Lauri ‘Lri’ Ranta for sharing [loads of hidden preferences](https://web.archive.org/web/20161104144204/http://osxnotes.net/defaults.html)
-* [Matijs Brinkhuis](https://matijs.brinkhu.is/) and his [dotfiles repository](https://github.com/matijs/dotfiles)
-* [Nicolas Gallagher](http://nicolasgallagher.com/) and his [dotfiles repository](https://github.com/necolas/dotfiles)
-* [Sindre Sorhus](https://sindresorhus.com/)
-* [Tom Ryder](https://sanctum.geek.nz/) and his [dotfiles repository](https://sanctum.geek.nz/cgit/dotfiles.git/about)
-* [Kevin Suttle](http://kevinsuttle.com/) and his [dotfiles repository](https://github.com/kevinSuttle/dotfiles) and [macOS-Defaults project](https://github.com/kevinSuttle/macOS-Defaults), which aims to provide better documentation for [`~/.macos`](https://mths.be/macos)
-* [Haralan Dobrev](https://hkdobrev.com/)
-* Anyone who [contributed a patch](https://github.com/mathiasbynens/dotfiles/contributors) or [made a helpful suggestion](https://github.com/mathiasbynens/dotfiles/issues)
+## Migration from Old Dotfiles
+
+See [MIGRATION.md](MIGRATION.md) for detailed migration guide.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test on both macOS and Ubuntu
+5. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE-MIT.txt](LICENSE-MIT.txt)
+
+## Credits
+
+Original dotfiles structure inspired by [Mathias Bynens](https://github.com/mathiasbynens/dotfiles).
+
+Simplified and modernized for 2025+ development workflows.
