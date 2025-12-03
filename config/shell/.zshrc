@@ -66,3 +66,6 @@ fi
 if [ -f "$HOME/.extra" ]; then
     source "$HOME/.extra"
 fi
+
+# remove it if you don't use op
+source /Users/john.y.huang/.config/op/plugins.sh
