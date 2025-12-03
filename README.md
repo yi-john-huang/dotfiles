@@ -5,7 +5,7 @@ A streamlined, all-in-one dotfiles system with automated bootstrap for quick lap
 ## Features
 
 - **One Command Setup**: Get production-ready in under 30 minutes
-- **Cross-Platform**: Supports macOS (Apple Silicon) and Ubuntu 24 LTS (x86_64)
+- **Cross-Platform**: Supports macOS (Apple Silicon/Intel) and Ubuntu 24+ LTS (x86_64/ARM64)
 - **Idempotent**: Safe to run multiple times
 - **Comprehensive**: Installs all development tools and configurations
 - **Customizable**: Use `~/.extra` for personal overrides
@@ -196,8 +196,8 @@ This file is sourced by shell configs but not tracked in the repository.
 
 ### Ubuntu
 
-- Ubuntu 24.04 LTS
-- x86_64 architecture
+- Ubuntu 24.04 LTS or later
+- x86_64 or ARM64 (aarch64) architecture
 - sudo access
 
 ## Testing
@@ -260,6 +260,17 @@ exec $SHELL
 # Or source the config
 source ~/.bashrc  # or ~/.zshrc
 ```
+
+### Binary Format Errors (Ubuntu 25 ARM64)
+
+If you see "cannot execute binary file: Exec format error":
+
+```bash
+# Run the fix script
+./fix-binaries.sh
+```
+
+This removes incompatible binaries and reinstalls with correct architecture.
 
 ## Migration from Old Dotfiles
 

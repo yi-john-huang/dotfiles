@@ -12,6 +12,13 @@ source "${SCRIPT_DIR}/../lib/utils.sh"
 # Update apt cache
 update_apt() {
     log_info "Updating apt cache..."
+    
+    # Remove broken hashicorp list if it exists (from previous failed runs)
+    if [ -f /etc/apt/sources.list.d/hashicorp.list ]; then
+        log_warn "Removing broken /etc/apt/sources.list.d/hashicorp.list"
+        sudo rm /etc/apt/sources.list.d/hashicorp.list
+    fi
+    
     sudo apt-get update -qq
     log_info "✓ apt cache updated"
 }

@@ -18,6 +18,10 @@ install_nvm() {
     fi
     
     log_info "Installing nvm..."
+    
+    # Temporarily disable nounset for nvm compatibility
+    set +u
+    
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
     
     # Load nvm
@@ -27,6 +31,9 @@ install_nvm() {
     # Install latest LTS Node.js
     nvm install --lts
     nvm use --lts
+    
+    # Re-enable nounset
+    set -u
     
     log_info "✓ nvm and Node.js installed"
 }
@@ -40,6 +47,8 @@ install_uv() {
     
     log_info "Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    # Add to PATH for current session
+    export PATH="$HOME/.local/bin:$PATH"
     log_info "✓ uv installed"
 }
 
@@ -55,10 +64,23 @@ install_go() {
         brew install go
     else
         local GO_VERSION="1.21.5"
-        wget "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
+        local GO_ARCH="amd64"
+        if [ "$(uname -m)" = "aarch64" ]; then
+            GO_ARCH="arm64"
+        fi
+        
+        local tmp_dir=$(mktemp -d)
+        pushd "$tmp_dir" > /dev/null
+        
+        log_info "Downloading Go ${GO_VERSION} for ${GO_ARCH}..."
+        curl -LO "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
+        
+        log_info "Extracting Go..."
         sudo rm -rf /usr/local/go
-        sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
-        rm "go${GO_VERSION}.linux-amd64.tar.gz"
+        sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
+        
+        popd > /dev/null
+        rm -rf "$tmp_dir"
     fi
     log_info "✓ Go installed"
 }

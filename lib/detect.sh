@@ -9,8 +9,19 @@ set -euo pipefail
 OS_TYPE="$(uname -s)"
 export OS_TYPE
 
-# Detect architecture
-OS_ARCH="$(uname -m)"
+# Detect architecture - normalize to common formats
+RAW_ARCH="$(uname -m)"
+case "$RAW_ARCH" in
+    x86_64|amd64)
+        OS_ARCH="x86_64"
+        ;;
+    aarch64|arm64)
+        OS_ARCH="aarch64"
+        ;;
+    *)
+        OS_ARCH="$RAW_ARCH"
+        ;;
+esac
 export OS_ARCH
 
 # Set platform flags

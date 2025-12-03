@@ -10,6 +10,33 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/detect.sh"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
+# Architecture mapping
+case "$OS_ARCH" in
+    x86_64)
+        ZELLIJ_ARCH="x86_64"
+        KUBECTL_ARCH="amd64"
+        AWS_ARCH="x86_64"
+        TERRAFORM_ARCH="amd64"
+        YQ_ARCH="amd64"
+        ;;
+    aarch64)
+        ZELLIJ_ARCH="aarch64"
+        KUBECTL_ARCH="arm64"
+        AWS_ARCH="aarch64"
+        TERRAFORM_ARCH="arm64"
+        YQ_ARCH="arm64"
+        ;;
+    *)
+        # Fallback or error, but let's try x86_64 as default if unknown
+        log_warn "Unknown architecture: $OS_ARCH. Defaulting to x86_64/amd64."
+        ZELLIJ_ARCH="x86_64"
+        KUBECTL_ARCH="amd64"
+        AWS_ARCH="x86_64"
+        TERRAFORM_ARCH="amd64"
+        YQ_ARCH="amd64"
+        ;;
+esac
+
 # Install jq
 install_jq() {
     if check_command jq; then
@@ -28,7 +55,7 @@ install_jq() {
 
 # Install yq
 install_yq() {
-    if check_command yq; then
+    if check_command yq && yq --version &>/dev/null; then
         log_info "✓ yq already installed"
         return 0
     fi
@@ -37,10 +64,29 @@ install_yq() {
     if [ "$IS_MACOS" = "true" ]; then
         brew install yq
     else
-        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-        sudo chmod +x /usr/local/bin/yq
+        local version="4.49.2"
+        local url="https://github.com/mikefarah/yq/releases/download/v${version}/yq_linux_${YQ_ARCH}"
+        local target="/usr/local/bin/yq"
+        
+        sudo rm -f "$target"
+        if sudo curl -fsSL "$url" -o "$target" && sudo chmod +x "$target"; then
+            if "$target" --version &>/dev/null; then
+                log_info "✓ yq installed from binary"
+                return 0
+            else
+                log_warn "yq binary incompatible with architecture"
+                sudo rm -f "$target"
+            fi
+        fi
+        
+        log_warn "Binary installation failed, trying snap..."
+        if sudo snap install yq; then
+            log_info "✓ yq installed via snap"
+        else
+            log_warn "Failed to install yq"
+            return 1
+        fi
     fi
-    log_info "✓ yq installed"
 }
 
 # Install ripgrep
@@ -70,14 +116,18 @@ install_bat() {
     if [ "$IS_MACOS" = "true" ]; then
         brew install bat
     else
-        sudo apt-get install -y bat
+        if sudo apt-get install -y bat; then
+            log_info "✓ bat installed"
+        else
+            log_warn "Failed to install bat"
+            return 1
+        fi
     fi
-    log_info "✓ bat installed"
 }
 
 # Install zellij
 install_zellij() {
-    if check_command zellij; then
+    if check_command zellij && zellij --version &>/dev/null; then
         log_info "✓ zellij already installed"
         return 0
     fi
@@ -86,17 +136,45 @@ install_zellij() {
     if [ "$IS_MACOS" = "true" ]; then
         brew install zellij
     else
-        cargo install --locked zellij || {
-            log_warn "Cargo not available, skipping zellij"
-            return 0
-        }
+        local version="0.43.1"
+        local url="https://github.com/zellij-org/zellij/releases/download/v${version}/zellij-${ZELLIJ_ARCH}-unknown-linux-musl.tar.gz"
+        local tmp_dir=$(mktemp -d)
+        local target="/usr/local/bin/zellij"
+        
+        pushd "$tmp_dir" > /dev/null
+        sudo rm -f "$target"
+        if curl -fsSL "$url" -o zellij.tar.gz && tar -xzf zellij.tar.gz && sudo install -o root -g root -m 0755 zellij "$target"; then
+            if "$target" --version &>/dev/null; then
+                log_info "✓ zellij installed from binary"
+                popd > /dev/null
+                rm -rf "$tmp_dir"
+                return 0
+            else
+                log_warn "zellij binary incompatible with architecture"
+                sudo rm -f "$target"
+            fi
+        fi
+        popd > /dev/null
+        rm -rf "$tmp_dir"
+        
+        log_warn "Binary installation failed, trying cargo..."
+        if command -v cargo &>/dev/null || sudo apt-get install -y cargo; then
+            if cargo install --locked zellij; then
+                log_info "✓ zellij installed via cargo"
+            else
+                log_warn "Failed to install zellij"
+                return 1
+            fi
+        else
+            log_warn "Failed to install zellij"
+            return 1
+        fi
     fi
-    log_info "✓ zellij installed"
 }
 
 # Install kubectl
 install_kubectl() {
-    if check_command kubectl; then
+    if check_command kubectl && kubectl version --client &>/dev/null; then
         log_info "✓ kubectl already installed"
         return 0
     fi
@@ -105,11 +183,34 @@ install_kubectl() {
     if [ "$IS_MACOS" = "true" ]; then
         brew install kubectl
     else
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-        rm kubectl
+        local tmp_dir=$(mktemp -d)
+        local target="/usr/local/bin/kubectl"
+        pushd "$tmp_dir" > /dev/null
+        
+        local stable_version=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+        sudo rm -f "$target"
+        if curl -fsSLO "https://dl.k8s.io/release/${stable_version}/bin/linux/${KUBECTL_ARCH}/kubectl" && sudo install -o root -g root -m 0755 kubectl "$target"; then
+            if "$target" version --client &>/dev/null; then
+                log_info "✓ kubectl installed"
+                popd > /dev/null
+                rm -rf "$tmp_dir"
+                return 0
+            else
+                log_warn "kubectl binary incompatible with architecture"
+                sudo rm -f "$target"
+            fi
+        fi
+        popd > /dev/null
+        rm -rf "$tmp_dir"
+        
+        log_warn "Binary installation failed, trying snap..."
+        if sudo snap install kubectl --classic; then
+            log_info "✓ kubectl installed via snap"
+        else
+            log_warn "Failed to install kubectl"
+            return 1
+        fi
     fi
-    log_info "✓ kubectl installed"
 }
 
 # Install kubectx
@@ -141,9 +242,23 @@ install_k9s() {
     if [ "$IS_MACOS" = "true" ]; then
         brew install derailed/k9s/k9s
     else
-        curl -sS https://webinstall.dev/k9s | bash
+        local version="0.32.7"
+        local k9s_arch="linux_${OS_ARCH}"
+        [ "$OS_ARCH" = "aarch64" ] && k9s_arch="linux_arm64"
+        [ "$OS_ARCH" = "x86_64" ] && k9s_arch="linux_amd64"
+        local url="https://github.com/derailed/k9s/releases/download/v${version}/k9s_${k9s_arch}.tar.gz"
+        local tmp_dir=$(mktemp -d)
+        
+        pushd "$tmp_dir" > /dev/null
+        if curl -fsSL "$url" -o k9s.tar.gz && tar -xzf k9s.tar.gz && sudo install -o root -g root -m 0755 k9s /usr/local/bin/k9s; then
+            log_info "✓ k9s installed from binary"
+        else
+            log_warn "Binary failed, trying snap..."
+            sudo snap install k9s || log_warn "k9s installation failed, skipping..."
+        fi
+        popd > /dev/null
+        rm -rf "$tmp_dir"
     fi
-    log_info "✓ k9s installed"
 }
 
 # Install Terraform
@@ -158,9 +273,19 @@ install_terraform() {
         brew tap hashicorp/tap
         brew install hashicorp/tap/terraform
     else
-        wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-        sudo apt-get update && sudo apt-get install -y terraform
+        # Install from binary to avoid apt repo issues
+        local version="1.9.0" # Pin version or fetch latest
+        local url="https://releases.hashicorp.com/terraform/${version}/terraform_${version}_linux_${TERRAFORM_ARCH}.zip"
+        
+        local tmp_dir=$(mktemp -d)
+        pushd "$tmp_dir" > /dev/null
+        
+        curl -LO "$url"
+        unzip -q "terraform_${version}_linux_${TERRAFORM_ARCH}.zip"
+        sudo install -o root -g root -m 0755 terraform /usr/local/bin/terraform
+        
+        popd > /dev/null
+        rm -rf "$tmp_dir"
     fi
     log_info "✓ Terraform installed"
 }
@@ -176,10 +301,15 @@ install_aws_cli() {
     if [ "$IS_MACOS" = "true" ]; then
         brew install awscli
     else
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        local tmp_dir=$(mktemp -d)
+        pushd "$tmp_dir" > /dev/null
+        
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip" -o "awscliv2.zip"
         unzip -q awscliv2.zip
         sudo ./aws/install
-        rm -rf aws awscliv2.zip
+        
+        popd > /dev/null
+        rm -rf "$tmp_dir"
     fi
     log_info "✓ AWS CLI installed"
 }
@@ -188,16 +318,22 @@ install_aws_cli() {
 install_common_tools() {
     log_info "Starting common tools installation..."
     
-    install_jq
-    install_yq
-    install_ripgrep
-    install_bat
-    install_zellij
-    install_kubectl
-    install_kubectx
-    install_k9s
-    install_terraform
-    install_aws_cli
+    local failed=0
     
-    log_info "✓ Common tools installation complete"
+    install_jq || ((failed++))
+    install_yq || ((failed++))
+    install_ripgrep || ((failed++))
+    install_bat || ((failed++))
+    install_zellij || ((failed++))
+    install_kubectl || ((failed++))
+    install_kubectx || ((failed++))
+    install_k9s || ((failed++))
+    install_terraform || ((failed++))
+    install_aws_cli || ((failed++))
+    
+    if [ $failed -eq 0 ]; then
+        log_info "✓ Common tools installation complete"
+    else
+        log_warn "Common tools installation complete with $failed failures"
+    fi
 }

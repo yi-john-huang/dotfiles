@@ -3,11 +3,21 @@
 # Verification Script
 # Validates all tool installations
 
-set -euo pipefail
+set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/utils.sh"
 source "${SCRIPT_DIR}/lib/detect.sh"
+
+# Load PATH from shell config to find newly installed tools
+if [ -f "$HOME/.bashrc" ]; then
+    set +u  # Disable nounset for sourcing
+    source "$HOME/.bashrc" 2>/dev/null || true
+    set -u
+fi
+
+# Ensure .local/bin is in PATH (for uv)
+export PATH="$HOME/.local/bin:$PATH"
 
 # Track results
 PASSED=0
@@ -19,8 +29,15 @@ check_tool() {
     local tool=$1
     local display_name=${2:-$tool}
     
+    # Debug log
+    # echo "DEBUG: Checking $tool..."
+    
     if check_command "$tool"; then
         local version=""
+        
+        # Temporarily disable exit on error for version checks
+        set +e
+        
         case "$tool" in
             kubectl)
                 version=$("$tool" version --client --short 2>&1 | head -n1 || echo "installed")
@@ -41,14 +58,19 @@ check_tool() {
                 version=$("$tool" --version 2>&1 | head -n1 || echo "unknown")
                 ;;
         esac
+        
+        # Re-enable exit on error
+        set -e
+        
         log_info "✓ $display_name: $version"
-        ((PASSED++))
+        ((PASSED+=1))
         return 0
     else
         log_error "✗ $display_name: not found"
         FAILED_TOOLS+=("$display_name")
-        ((FAILED++))
-        return 1
+        ((FAILED+=1))
+        # Return 0 so the script continues (we track failures in FAILED variable)
+        return 0
     fi
 }
 
@@ -67,7 +89,15 @@ verify_all() {
     check_tool jq "jq"
     check_tool yq "yq"
     check_tool rg "ripgrep"
-    check_tool bat "bat" || check_tool batcat "bat"
+    if check_command bat; then
+        check_tool bat "bat"
+    elif check_command batcat; then
+        check_tool batcat "bat"
+    else
+        log_error "✗ bat: not found"
+        FAILED_TOOLS+=("bat")
+        ((FAILED++))
+    fi
     check_tool zellij "zellij"
     check_tool kubectl "kubectl"
     check_tool kubectx "kubectx"

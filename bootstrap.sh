@@ -71,7 +71,7 @@ main() {
     if [ "$SKIP_VERIFY" = "false" ]; then
         log_info "Verifying installations..."
         source "${DOTFILES_DIR}/verify.sh"
-        verify_all
+        verify_all || log_warn "Some tools failed verification (see above)"
     fi
     
     log_info "✓ Bootstrap complete!"
@@ -90,9 +90,10 @@ deploy_configs() {
         fi
     done
     
-    # Create symlinks
-    ln -sf "${DOTFILES_DIR}/config/shell/.bashrc" "$HOME/.bashrc"
-    ln -sf "${DOTFILES_DIR}/config/shell/.zshrc" "$HOME/.zshrc"
+    # Copy shell configs (instead of symlink, to allow local modifications)
+    # We force copy (-f) to overwrite
+    cp -f "${DOTFILES_DIR}/config/shell/.bashrc" "$HOME/.bashrc"
+    cp -f "${DOTFILES_DIR}/config/shell/.zshrc" "$HOME/.zshrc"
     # Git config (using include instead of symlink)
     if [ ! -f "$HOME/.gitconfig" ] || [ -L "$HOME/.gitconfig" ]; then
         # If it's a symlink or doesn't exist, start fresh
