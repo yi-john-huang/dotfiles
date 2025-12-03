@@ -1,7 +1,3 @@
-[user]
-	# Set in ~/.extra to avoid committing personal info
-	# name = Your Name
-	# email = your.email@example.com
 
 [core]
 	excludesfile = ~/.gitignore_global
@@ -56,3 +52,6 @@
 
 [credential]
 	helper = cache --timeout=3600
+[user]
+	name = John Huang
+	email = john.y.huang@gogoro.com

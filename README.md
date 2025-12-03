@@ -23,6 +23,43 @@ cd ~/.dotfiles
 ### Platform-Specific Tools
 
 **macOS:**
+
+- Homebrew (package manager)
+- iTerm2 (terminal)
+- Colima (container runtime)
+
+**Ubuntu:**
+
+- build-essential
+- System packages (curl, wget, git, etc.)
+
+### Common CLI Tools
+
+- jq, yq (JSON/YAML processors)
+- ripgrep, bat (modern grep/cat)
+- zellij (terminal multiplexer)
+- kubectl, kubectx, k9s (Kubernetes tools)
+- Terraform (infrastructure as code)
+
+### Development Tools
+
+- **Node.js/TypeScript**: nvm + latest LTS
+- **Python**: uv package manager
+- **Go**: Latest stable
+- **Java**: OpenJDK 17
+
+### Configurations
+
+- **Shell**: .bashrc and .zshrc with aliases and PATH
+- **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
+
+## Usage
+
+### Basic Installation
+
+### Platform-Specific Tools
+
+**macOS:**
 - Homebrew (package manager)
 - iTerm2 (terminal)
 - Colima (container runtime)
@@ -56,16 +93,19 @@ cd ~/.dotfiles
 ```
 
 ### Force Reinstall
+
 ```bash
 ./bootstrap.sh --force
 ```
 
 ### Skip Verification
+
 ```bash
 ./bootstrap.sh --skip-verify
 ```
 
 ### Verify Installation
+
 ```bash
 ./verify.sh
 ```
@@ -112,11 +152,13 @@ This file is sourced by shell configs but not tracked in the repository.
 ## Requirements
 
 ### macOS
+
 - macOS 11+ (Big Sur or later)
 - Apple Silicon (ARM64) or Intel (x86_64)
 - Command Line Tools (installed automatically)
 
 ### Ubuntu
+
 - Ubuntu 24.04 LTS
 - x86_64 architecture
 - sudo access
@@ -151,6 +193,7 @@ For testing on Ubuntu without a physical machine, use UTM:
 ```
 
 The script will:
+
 - Download Ubuntu 24.04 LTS ISO
 - Provide step-by-step VM creation instructions
 - Configure VM with optimal settings for testing
@@ -158,18 +201,21 @@ The script will:
 ## Troubleshooting
 
 ### Homebrew Installation Fails (macOS)
+
 ```bash
 # Install Command Line Tools manually
 xcode-select --install
 ```
 
 ### Permission Denied Errors (Ubuntu)
+
 ```bash
 # Ensure you have sudo access
 sudo -v
 ```
 
 ### Tool Not Found After Installation
+
 ```bash
 # Restart your shell
 exec $SHELL

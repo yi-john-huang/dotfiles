@@ -93,7 +93,17 @@ deploy_configs() {
     # Create symlinks
     ln -sf "${DOTFILES_DIR}/config/shell/.bashrc" "$HOME/.bashrc"
     ln -sf "${DOTFILES_DIR}/config/shell/.zshrc" "$HOME/.zshrc"
-    ln -sf "${DOTFILES_DIR}/config/git/.gitconfig" "$HOME/.gitconfig"
+    # Git config (using include instead of symlink)
+    if [ ! -f "$HOME/.gitconfig" ] || [ -L "$HOME/.gitconfig" ]; then
+        # If it's a symlink or doesn't exist, start fresh
+        [ -L "$HOME/.gitconfig" ] && rm "$HOME/.gitconfig"
+        touch "$HOME/.gitconfig"
+    fi
+    
+    # Configure include path
+    # We use a relative path if possible, or absolute if needed. 
+    # Since DOTFILES_DIR is absolute, we use that.
+    git config -f "$HOME/.gitconfig" include.path "${DOTFILES_DIR}/config/git/.gitconfig"
     ln -sf "${DOTFILES_DIR}/config/git/.gitignore_global" "$HOME/.gitignore_global"
     
     log_info "✓ Configurations deployed"
