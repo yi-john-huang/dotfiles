@@ -13,26 +13,20 @@ source "${SCRIPT_DIR}/../lib/utils.sh"
 # Architecture mapping
 case "$OS_ARCH" in
     x86_64)
-        ZELLIJ_ARCH="x86_64"
         KUBECTL_ARCH="amd64"
         AWS_ARCH="x86_64"
-        TERRAFORM_ARCH="amd64"
         YQ_ARCH="amd64"
         ;;
     aarch64)
-        ZELLIJ_ARCH="aarch64"
         KUBECTL_ARCH="arm64"
         AWS_ARCH="aarch64"
-        TERRAFORM_ARCH="arm64"
         YQ_ARCH="arm64"
         ;;
     *)
         # Fallback or error, but let's try x86_64 as default if unknown
         log_warn "Unknown architecture: $OS_ARCH. Defaulting to x86_64/amd64."
-        ZELLIJ_ARCH="x86_64"
         KUBECTL_ARCH="amd64"
         AWS_ARCH="x86_64"
-        TERRAFORM_ARCH="amd64"
         YQ_ARCH="amd64"
         ;;
 esac
@@ -125,51 +119,20 @@ install_bat() {
     fi
 }
 
-# Install zellij
-install_zellij() {
-    if check_command zellij && zellij --version &>/dev/null; then
-        log_info "✓ zellij already installed"
+# Install tmux
+install_tmux() {
+    if check_command tmux; then
+        log_info "✓ tmux already installed"
         return 0
     fi
     
-    log_info "Installing zellij..."
+    log_info "Installing tmux..."
     if [ "$IS_MACOS" = "true" ]; then
-        brew install zellij
+        brew install tmux
     else
-        local version="0.43.1"
-        local url="https://github.com/zellij-org/zellij/releases/download/v${version}/zellij-${ZELLIJ_ARCH}-unknown-linux-musl.tar.gz"
-        local tmp_dir=$(mktemp -d)
-        local target="/usr/local/bin/zellij"
-        
-        pushd "$tmp_dir" > /dev/null
-        sudo rm -f "$target"
-        if curl -fsSL "$url" -o zellij.tar.gz && tar -xzf zellij.tar.gz && sudo install -o root -g root -m 0755 zellij "$target"; then
-            if "$target" --version &>/dev/null; then
-                log_info "✓ zellij installed from binary"
-                popd > /dev/null
-                rm -rf "$tmp_dir"
-                return 0
-            else
-                log_warn "zellij binary incompatible with architecture"
-                sudo rm -f "$target"
-            fi
-        fi
-        popd > /dev/null
-        rm -rf "$tmp_dir"
-        
-        log_warn "Binary installation failed, trying cargo..."
-        if command -v cargo &>/dev/null || sudo apt-get install -y cargo; then
-            if cargo install --locked zellij; then
-                log_info "✓ zellij installed via cargo"
-            else
-                log_warn "Failed to install zellij"
-                return 1
-            fi
-        else
-            log_warn "Failed to install zellij"
-            return 1
-        fi
+        sudo apt-get install -y tmux
     fi
+    log_info "✓ tmux installed"
 }
 
 # Install kubectl
@@ -261,33 +224,46 @@ install_k9s() {
     fi
 }
 
-# Install Terraform
-install_terraform() {
-    if check_command terraform; then
-        log_info "✓ Terraform already installed"
+# Install Helm
+install_helm() {
+    if check_command helm; then
+        log_info "✓ Helm already installed"
         return 0
     fi
     
-    log_info "Installing Terraform..."
+    log_info "Installing Helm..."
     if [ "$IS_MACOS" = "true" ]; then
-        brew tap hashicorp/tap
-        brew install hashicorp/tap/terraform
+        brew install helm
     else
-        # Install from binary to avoid apt repo issues
-        local version="1.9.0" # Pin version or fetch latest
-        local url="https://releases.hashicorp.com/terraform/${version}/terraform_${version}_linux_${TERRAFORM_ARCH}.zip"
-        
-        local tmp_dir=$(mktemp -d)
-        pushd "$tmp_dir" > /dev/null
-        
-        curl -LO "$url"
-        unzip -q "terraform_${version}_linux_${TERRAFORM_ARCH}.zip"
-        sudo install -o root -g root -m 0755 terraform /usr/local/bin/terraform
-        
-        popd > /dev/null
-        rm -rf "$tmp_dir"
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
     fi
-    log_info "✓ Terraform installed"
+    log_info "✓ Helm installed"
+}
+
+# Install tfenv and Terraform
+install_tfenv() {
+    if check_command tfenv; then
+        log_info "✓ tfenv already installed"
+    else
+        log_info "Installing tfenv..."
+        if [ "$IS_MACOS" = "true" ]; then
+            brew install tfenv
+        else
+            git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
+            export PATH="$HOME/.tfenv/bin:$PATH"
+        fi
+        log_info "✓ tfenv installed"
+    fi
+    
+    # Install latest Terraform version
+    if ! terraform version &>/dev/null; then
+        log_info "Installing latest Terraform via tfenv..."
+        tfenv install latest
+        tfenv use latest
+        log_info "✓ Terraform installed via tfenv"
+    else
+        log_info "✓ Terraform already available"
+    fi
 }
 
 # Install AWS CLI
@@ -324,11 +300,12 @@ install_common_tools() {
     install_yq || ((failed++))
     install_ripgrep || ((failed++))
     install_bat || ((failed++))
-    install_zellij || ((failed++))
+    install_tmux || ((failed++))
     install_kubectl || ((failed++))
     install_kubectx || ((failed++))
     install_k9s || ((failed++))
-    install_terraform || ((failed++))
+    install_helm || ((failed++))
+    install_tfenv || ((failed++))
     install_aws_cli || ((failed++))
     
     if [ $failed -eq 0 ]; then

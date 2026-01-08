@@ -22,6 +22,9 @@ export PATH="$HOME/.local/bin:$PATH"
 export GOPATH="$HOME/go"
 export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"
 
+# tfenv
+export PATH="$HOME/.tfenv/bin:$PATH"
+
 # Java
 if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
     export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"

@@ -113,12 +113,25 @@ verify_all() {
         FAILED_TOOLS+=("bat")
         ((FAILED++))
     fi
-    check_tool zellij "zellij"
+    check_tool tmux "tmux"
     check_tool kubectl "kubectl"
     check_tool kubectx "kubectx"
     check_tool k9s "k9s"
+    check_tool helm "Helm"
+    check_tool tfenv "tfenv"
     check_tool terraform "Terraform"
     check_tool aws "AWS CLI"
+    
+    # Check docker buildx
+    if docker buildx version &>/dev/null; then
+        local buildx_version=$(docker buildx version 2>&1 | head -n1)
+        log_info "✓ Docker buildx: $buildx_version"
+        ((PASSED+=1))
+    else
+        log_error "✗ Docker buildx: not found"
+        FAILED_TOOLS+=("docker-buildx")
+        ((FAILED+=1))
+    fi
     
     # Development tools
     check_tool node "Node.js"

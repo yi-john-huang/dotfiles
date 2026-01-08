@@ -45,7 +45,7 @@ install_colima() {
         log_info "✓ Colima already installed"
     else
         log_info "Installing Colima..."
-        brew install colima docker docker-compose
+        brew install colima docker docker-compose docker-buildx
         log_info "✓ Colima installed"
     fi
     
