@@ -2,6 +2,12 @@
 
 # Simplified .zshrc for dotfiles bootstrap
 
+# Enable Powerlevel10k instant prompt (should be near the top)
+# Initialization code that may require console input must go above this block.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # Fix for Homebrew completion security warning
 ZSH_DISABLE_COMPFIX=true
 
@@ -12,11 +18,6 @@ export PATH="/usr/local/bin:$PATH"
 if [ -d "/opt/homebrew" ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
-
-# nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # uv
 export PATH="$HOME/.local/bin:$PATH"
@@ -32,6 +33,18 @@ export PATH="$HOME/.tfenv/bin:$PATH"
 if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
     export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
 fi
+
+# Zim framework initialization
+# Must be after PATH setup but BEFORE anything that might trigger compinit
+ZIM_HOME="${HOME}/.zim"
+if [[ -s "${ZIM_HOME}/init.zsh" ]]; then
+    source "${ZIM_HOME}/init.zsh"
+fi
+
+# nvm (load after Zim to avoid completion conflicts)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # Aliases
 alias ll='ls -lah'
@@ -71,4 +84,10 @@ if [ -f "$HOME/.extra" ]; then
 fi
 
 # remove it if you don't use op
-source /Users/john.y.huang/.config/op/plugins.sh
+if [ -f "/Users/john.y.huang/.config/op/plugins.sh" ]; then
+    source /Users/john.y.huang/.config/op/plugins.sh
+fi
+
+# Powerlevel10k theme configuration
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh
+[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
