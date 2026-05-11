@@ -9,15 +9,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/utils.sh"
 source "${SCRIPT_DIR}/lib/detect.sh"
 
-# Load PATH from shell config to find newly installed tools
-if [ -f "$HOME/.bashrc" ]; then
-    set +u  # Disable nounset for sourcing
-    source "$HOME/.bashrc" 2>/dev/null || true
+# Load tool paths without sourcing interactive shell configs.
+if [ -d "/opt/homebrew" ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$PATH:$HOME/.lmstudio/bin"
+export GOPATH="$HOME/go"
+export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"
+export PATH="$HOME/.tfenv/bin:$PATH"
+
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    export NVM_DIR="$HOME/.nvm"
+elif [ -s "${XDG_CONFIG_HOME:-$HOME/.config}/nvm/nvm.sh" ]; then
+    export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
+fi
+
+if [ -n "${NVM_DIR:-}" ]; then
+    set +u
+    source "$NVM_DIR/nvm.sh"
     set -u
 fi
 
-# Ensure .local/bin is in PATH (for uv)
-export PATH="$HOME/.local/bin:$PATH"
+if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
+    export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
+fi
 
 # Track results
 PASSED=0
@@ -39,25 +56,41 @@ check_tool() {
         set +e
         
         case "$tool" in
+            tmux)
+                version=$("$tool" -V 2>&1 | head -n1)
+                ;;
+            zellij)
+                version=$("$tool" --version 2>&1 | head -n1)
+                ;;
+            alacritty)
+                version=$("$tool" -V 2>&1 | head -n1)
+                ;;
             kubectl)
-                version=$("$tool" version --client --short 2>&1 | head -n1 || echo "installed")
+                version=$("$tool" version --client 2>&1 | head -n1)
                 ;;
             kubectx|kubens)
                 version="installed"
                 ;;
             k9s)
-                version=$("$tool" version -s 2>&1 | head -n1 || echo "installed")
+                version=$("$tool" version -s 2>&1 | head -n1)
+                ;;
+            helm)
+                version=$("$tool" version --short 2>&1 | head -n1)
                 ;;
             go)
-                version=$("$tool" version 2>&1 | head -n1 || echo "installed")
+                version=$("$tool" version 2>&1 | head -n1)
                 ;;
             java)
-                version=$("$tool" -version 2>&1 | head -n1 || echo "installed")
+                version=$("$tool" -version 2>&1 | head -n1)
                 ;;
             *)
-                version=$("$tool" --version 2>&1 | head -n1 || echo "unknown")
+                version=$("$tool" --version 2>&1 | head -n1)
                 ;;
         esac
+
+        if [ -z "$version" ] || [[ "$version" == error:* ]] || [[ "$version" == Error:* ]] || [[ "$version" == *"unknown option"* ]] || [[ "$version" == *"unknown flag"* ]]; then
+            version="installed"
+        fi
         
         # Re-enable exit on error
         set -e
@@ -74,6 +107,17 @@ check_tool() {
     fi
 }
 
+check_optional_tool() {
+    local tool=$1
+    local display_name=${2:-$tool}
+
+    if check_command "$tool"; then
+        check_tool "$tool" "$display_name"
+    else
+        log_warn "Optional $display_name: not found"
+    fi
+}
+
 # Verify all installations
 verify_all() {
     log_info "Verifying installations..."
@@ -82,6 +126,7 @@ verify_all() {
     # Platform-specific
     if [ "$IS_MACOS" = "true" ]; then
         check_tool brew "Homebrew"
+        check_tool alacritty "Alacritty"
         check_tool colima "Colima"
         
         # Verify x86_64 emulation capability
@@ -99,6 +144,10 @@ verify_all() {
             fi
         fi
     fi
+
+    if [ "$IS_UBUNTU" = "true" ]; then
+        check_tool alacritty "Alacritty"
+    fi
     
     # Common tools
     check_tool jq "jq"
@@ -114,6 +163,7 @@ verify_all() {
         ((FAILED++))
     fi
     check_tool tmux "tmux"
+    check_tool zellij "Zellij"
     check_tool kubectl "kubectl"
     check_tool kubectx "kubectx"
     check_tool k9s "k9s"
@@ -139,6 +189,11 @@ verify_all() {
     check_tool uv "uv"
     check_tool go "Go"
     check_tool java "Java"
+
+    # Optional local AI CLIs
+    check_optional_tool lms "LM Studio CLI"
+    check_optional_tool opencode "OpenCode"
+    check_optional_tool claude "Claude Code"
     
     # Git
     check_tool git "Git"

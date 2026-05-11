@@ -11,30 +11,52 @@ source "${SCRIPT_DIR}/../lib/detect.sh"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
 # Install nvm (Node Version Manager)
-install_nvm() {
-    if [ -d "$HOME/.nvm" ]; then
-        log_info "✓ nvm already installed"
-        return 0
+get_nvm_dir() {
+    if [ -n "${NVM_DIR:-}" ]; then
+        echo "$NVM_DIR"
+    elif [ -s "$HOME/.nvm/nvm.sh" ]; then
+        echo "$HOME/.nvm"
+    elif [ -s "${XDG_CONFIG_HOME:-$HOME/.config}/nvm/nvm.sh" ]; then
+        echo "${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
+    else
+        echo "$HOME/.nvm"
     fi
-    
-    log_info "Installing nvm..."
-    
+}
+
+install_nvm() {
+    export NVM_DIR="$(get_nvm_dir)"
+
     # Temporarily disable nounset for nvm compatibility
     set +u
-    
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-    
-    # Load nvm
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    
+
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        log_info "✓ nvm already installed"
+    else
+        log_info "Installing nvm..."
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    fi
+
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        \. "$NVM_DIR/nvm.sh"
+    else
+        log_warn "nvm install did not create $NVM_DIR/nvm.sh"
+        set -u
+        return 1
+    fi
+
+    if ! declare -F nvm > /dev/null; then
+        log_warn "nvm could not be loaded from $NVM_DIR"
+        set -u
+        return 1
+    fi
+
     # Install latest LTS Node.js
     nvm install --lts
     nvm use --lts
-    
+
     # Re-enable nounset
     set -u
-    
+
     log_info "✓ nvm and Node.js installed"
 }
 

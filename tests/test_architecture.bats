@@ -20,12 +20,12 @@ setup() {
     fi
 }
 
-@test "zellij binary is executable and correct architecture" {
-    if command -v zellij &>/dev/null; then
-        run zellij --version
+@test "tmux binary is executable and correct architecture" {
+    if command -v tmux &>/dev/null; then
+        run tmux -V
         [ "$status" -eq 0 ]
     else
-        skip "zellij not installed"
+        skip "tmux not installed"
     fi
 }
 

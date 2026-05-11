@@ -16,11 +16,13 @@ case "$OS_ARCH" in
         KUBECTL_ARCH="amd64"
         AWS_ARCH="x86_64"
         YQ_ARCH="amd64"
+        ZELLIJ_ARCH="x86_64"
         ;;
     aarch64)
         KUBECTL_ARCH="arm64"
         AWS_ARCH="aarch64"
         YQ_ARCH="arm64"
+        ZELLIJ_ARCH="aarch64"
         ;;
     *)
         # Fallback or error, but let's try x86_64 as default if unknown
@@ -28,8 +30,49 @@ case "$OS_ARCH" in
         KUBECTL_ARCH="amd64"
         AWS_ARCH="x86_64"
         YQ_ARCH="amd64"
+        ZELLIJ_ARCH="x86_64"
         ;;
 esac
+
+# Install JetBrainsMono Nerd Font
+install_jetbrains_mono_nerd_font() {
+    if [ "$IS_MACOS" = "true" ]; then
+        if [ -d "$HOME/Library/Fonts" ] && find "$HOME/Library/Fonts" -iname '*JetBrainsMono*Nerd*Font*' -print -quit | grep -q .; then
+            log_info "✓ JetBrainsMono Nerd Font already installed"
+            return 0
+        fi
+
+        log_info "Installing JetBrainsMono Nerd Font..."
+        brew install --cask font-jetbrains-mono-nerd-font
+        log_info "✓ JetBrainsMono Nerd Font installed"
+        return 0
+    fi
+
+    if fc-match "JetBrainsMono Nerd Font Mono" 2>/dev/null | grep -qi "JetBrains"; then
+        log_info "✓ JetBrainsMono Nerd Font already installed"
+        return 0
+    fi
+
+    log_info "Installing JetBrainsMono Nerd Font..."
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    pushd "$tmp_dir" > /dev/null
+
+    if curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" -o JetBrainsMono.zip; then
+        mkdir -p "$HOME/.local/share/fonts/JetBrainsMonoNerdFont"
+        unzip -qo JetBrainsMono.zip -d "$HOME/.local/share/fonts/JetBrainsMonoNerdFont"
+        fc-cache -f "$HOME/.local/share/fonts"
+        log_info "✓ JetBrainsMono Nerd Font installed"
+    else
+        log_warn "JetBrainsMono Nerd Font installation failed"
+        popd > /dev/null
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    popd > /dev/null
+    rm -rf "$tmp_dir"
+}
 
 # Install jq
 install_jq() {
@@ -133,6 +176,49 @@ install_tmux() {
         sudo apt-get install -y tmux
     fi
     log_info "✓ tmux installed"
+}
+
+# Install Zellij
+install_zellij() {
+    if check_command zellij; then
+        log_info "✓ Zellij already installed"
+        return 0
+    fi
+
+    log_info "Installing Zellij..."
+    if [ "$IS_MACOS" = "true" ]; then
+        if ! brew install zellij; then
+            log_warn "Zellij installation failed"
+            return 1
+        fi
+    else
+        if sudo apt-get install -y zellij; then
+            log_info "✓ Zellij installed via apt"
+            return 0
+        fi
+
+        log_warn "Zellij is not available from apt; installing official prebuilt binary..."
+        local tmp_dir
+        local url
+        tmp_dir=$(mktemp -d)
+        url="https://github.com/zellij-org/zellij/releases/latest/download/zellij-${ZELLIJ_ARCH}-unknown-linux-musl.tar.gz"
+
+        pushd "$tmp_dir" > /dev/null
+        if curl -fsSL "$url" -o zellij.tar.gz && tar -xzf zellij.tar.gz && sudo install -o root -g root -m 0755 zellij /usr/local/bin/zellij; then
+            if /usr/local/bin/zellij --version &>/dev/null; then
+                log_info "✓ Zellij installed from official prebuilt binary"
+                popd > /dev/null
+                rm -rf "$tmp_dir"
+                return 0
+            fi
+        fi
+
+        popd > /dev/null
+        rm -rf "$tmp_dir"
+        log_warn "Zellij installation failed"
+        return 1
+    fi
+    log_info "✓ Zellij installed"
 }
 
 # Install kubectl
@@ -296,17 +382,19 @@ install_common_tools() {
     
     local failed=0
     
-    install_jq || ((failed++))
-    install_yq || ((failed++))
-    install_ripgrep || ((failed++))
-    install_bat || ((failed++))
-    install_tmux || ((failed++))
-    install_kubectl || ((failed++))
-    install_kubectx || ((failed++))
-    install_k9s || ((failed++))
-    install_helm || ((failed++))
-    install_tfenv || ((failed++))
-    install_aws_cli || ((failed++))
+    install_jetbrains_mono_nerd_font || ((failed+=1))
+    install_jq || ((failed+=1))
+    install_yq || ((failed+=1))
+    install_ripgrep || ((failed+=1))
+    install_bat || ((failed+=1))
+    install_tmux || ((failed+=1))
+    install_zellij || ((failed+=1))
+    install_kubectl || ((failed+=1))
+    install_kubectx || ((failed+=1))
+    install_k9s || ((failed+=1))
+    install_helm || ((failed+=1))
+    install_tfenv || ((failed+=1))
+    install_aws_cli || ((failed+=1))
     
     if [ $failed -eq 0 ]; then
         log_info "✓ Common tools installation complete"

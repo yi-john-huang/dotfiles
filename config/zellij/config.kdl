@@ -1,0 +1,53 @@
+// Zellij config focused on low-friction daily terminal work.
+//
+// The defaults remain available; these settings add faster navigation,
+// bottom shortcut hints, quieter startup behavior, and a theme that matches
+// Alacritty.
+
+default_mode "normal"
+default_layout "default"
+
+pane_frames true
+simplified_ui true
+mouse_mode true
+scroll_buffer_size 100000
+
+copy_on_select true
+copy_clipboard "system"
+
+session_serialization true
+pane_viewport_serialization true
+
+show_startup_tips false
+show_release_notes false
+
+keybinds {
+    normal {
+        bind "Alt h" "Alt Left" { MoveFocusOrTab "Left"; }
+        bind "Alt j" "Alt Down" { MoveFocus "Down"; }
+        bind "Alt k" "Alt Up" { MoveFocus "Up"; }
+        bind "Alt l" "Alt Right" { MoveFocusOrTab "Right"; }
+        bind "Alt n" { NewPane; }
+        bind "Alt f" { ToggleFocusFullscreen; }
+        bind "Alt [" { GoToPreviousTab; }
+        bind "Alt ]" { GoToNextTab; }
+    }
+}
+
+themes {
+    dotfiles-mocha {
+        fg 205 214 244
+        bg 30 30 46
+        black 69 71 90
+        red 243 139 168
+        green 166 227 161
+        yellow 249 226 175
+        blue 137 180 250
+        magenta 203 166 247
+        cyan 137 220 235
+        white 186 194 222
+        orange 250 179 135
+    }
+}
+
+theme "dotfiles-mocha"

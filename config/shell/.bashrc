@@ -11,12 +11,21 @@ if [ -d "/opt/homebrew" ]; then
 fi
 
 # nvm
-export NVM_DIR="$HOME/.nvm"
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    export NVM_DIR="$HOME/.nvm"
+elif [ -s "${XDG_CONFIG_HOME:-$HOME/.config}/nvm/nvm.sh" ]; then
+    export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
+else
+    export NVM_DIR="$HOME/.nvm"
+fi
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # uv
 export PATH="$HOME/.local/bin:$PATH"
+
+# LM Studio CLI
+export PATH="$PATH:$HOME/.lmstudio/bin"
 
 # Go
 export GOPATH="$HOME/go"
@@ -50,6 +59,10 @@ alias ga='git add'
 alias gc='git commit'
 alias gp='git push'
 alias gl='git log --oneline'
+
+# AI agents
+alias oc='opencode'
+alias cc='claude'
 
 # Modern CLI tools
 if command -v bat &> /dev/null; then

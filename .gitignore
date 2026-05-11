@@ -12,3 +12,10 @@ Thumbs.db
 # Files that might appear on external disks
 .Spotlight-V100
 .Trashes
+
+# Machine-local tmux overrides
+.tmux.local
+config/tmux/.tmux.local
+
+# Machine-local Alacritty overrides
+config/alacritty/local.toml

@@ -47,6 +47,7 @@ install_system_packages() {
         software-properties-common
         apt-transport-https
         ca-certificates
+        fontconfig
         gnupg
         lsb-release
     )
@@ -61,6 +62,22 @@ install_system_packages() {
     done
     
     log_info "✓ System packages installed"
+}
+
+# Install Alacritty
+install_alacritty() {
+    if check_command alacritty; then
+        log_info "✓ Alacritty already installed"
+        return 0
+    fi
+
+    log_info "Installing Alacritty..."
+    if sudo apt-get install -y alacritty; then
+        log_info "✓ Alacritty installed"
+    else
+        log_warn "Alacritty installation failed"
+        return 1
+    fi
 }
 
 # Install Docker CE with buildx
@@ -107,6 +124,7 @@ install_ubuntu_tools() {
     update_apt
     install_build_essentials
     install_system_packages
+    install_alacritty
     install_docker
     
     log_info "✓ Ubuntu tools installation complete"

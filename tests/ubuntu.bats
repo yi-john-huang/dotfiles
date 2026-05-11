@@ -32,3 +32,8 @@ setup() {
     source "${BATS_TEST_DIRNAME}/../install/ubuntu.sh"
     declare -f install_system_packages > /dev/null
 }
+
+@test "install_alacritty function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/ubuntu.sh"
+    declare -f install_alacritty > /dev/null
+}

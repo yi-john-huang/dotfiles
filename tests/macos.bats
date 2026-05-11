@@ -23,6 +23,11 @@ setup() {
     declare -f install_iterm2 > /dev/null
 }
 
+@test "install_alacritty function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    declare -f install_alacritty > /dev/null
+}
+
 @test "install_colima function exists" {
     source "${BATS_TEST_DIRNAME}/../install/macos.sh"
     declare -f install_colima > /dev/null

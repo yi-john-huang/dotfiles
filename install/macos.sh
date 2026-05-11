@@ -39,6 +39,23 @@ install_iterm2() {
     log_info "✓ iTerm2 installed"
 }
 
+# Install Alacritty
+install_alacritty() {
+    if check_command brew && brew list --cask alacritty &> /dev/null; then
+        log_info "✓ Alacritty already installed"
+        return 0
+    fi
+
+    log_info "Installing Alacritty..."
+    mkdir -p "$HOME/Applications"
+    if brew install --cask --appdir="$HOME/Applications" alacritty; then
+        log_info "✓ Alacritty installed"
+    else
+        log_warn "Alacritty installation failed"
+        return 1
+    fi
+}
+
 # Install Colima
 install_colima() {
     if check_command colima; then
@@ -74,6 +91,7 @@ install_macos_tools() {
     
     install_homebrew
     install_iterm2
+    install_alacritty
     install_colima
     
     log_info "✓ macOS tools installation complete"

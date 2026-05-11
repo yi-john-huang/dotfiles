@@ -12,6 +12,11 @@ setup() {
     declare -f install_jq > /dev/null
 }
 
+@test "install_jetbrains_mono_nerd_font function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_jetbrains_mono_nerd_font > /dev/null
+}
+
 @test "install_yq function exists" {
     source "${BATS_TEST_DIRNAME}/../install/common.sh"
     declare -f install_yq > /dev/null
@@ -25,6 +30,11 @@ setup() {
 @test "install_bat function exists" {
     source "${BATS_TEST_DIRNAME}/../install/common.sh"
     declare -f install_bat > /dev/null
+}
+
+@test "install_tmux function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_tmux > /dev/null
 }
 
 @test "install_zellij function exists" {
@@ -47,7 +57,7 @@ setup() {
     declare -f install_k9s > /dev/null
 }
 
-@test "install_terraform function exists" {
+@test "install_tfenv function exists" {
     source "${BATS_TEST_DIRNAME}/../install/common.sh"
-    declare -f install_terraform > /dev/null
+    declare -f install_tfenv > /dev/null
 }

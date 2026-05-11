@@ -26,18 +26,21 @@ cd ~/.dotfiles
 
 - Homebrew (package manager)
 - iTerm2 (terminal)
+- Alacritty (terminal)
 - Colima (container runtime)
 
 **Ubuntu:**
 
 - build-essential
 - System packages (curl, wget, git, etc.)
+- Alacritty (terminal)
 
 ### Common CLI Tools
 
 - jq, yq (JSON/YAML processors)
+- JetBrainsMono Nerd Font (terminal font)
 - ripgrep, bat (modern grep/cat)
-- zellij (terminal multiplexer)
+- tmux and Zellij (terminal multiplexers)
 - kubectl, kubectx, k9s (Kubernetes tools)
 - Terraform (infrastructure as code)
 
@@ -50,8 +53,11 @@ cd ~/.dotfiles
 
 ### Configurations
 
-- **Shell**: .bashrc and .zshrc with aliases and PATH
+- **Shell**: .bashrc and .zshrc with aliases, AI CLI shortcuts, and PATH
 - **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
+- **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
+- **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
+- **Alacritty**: cross-platform XDG config at `~/.config/alacritty/alacritty.toml`
 
 ## Usage
 
@@ -63,18 +69,21 @@ cd ~/.dotfiles
 
 - Homebrew (package manager)
 - iTerm2 (terminal)
+- Alacritty (terminal)
 - Colima (container runtime)
 
 **Ubuntu:**
 
 - build-essential
 - System packages (curl, wget, git, etc.)
+- Alacritty (terminal)
 
 ### Common CLI Tools
 
 - jq, yq (JSON/YAML processors)
+- JetBrainsMono Nerd Font (terminal font)
 - ripgrep, bat (modern grep/cat)
-- zellij (terminal multiplexer)
+- tmux and Zellij (terminal multiplexers)
 - kubectl, kubectx, k9s (Kubernetes tools)
 - Terraform (infrastructure as code)
 
@@ -87,8 +96,11 @@ cd ~/.dotfiles
 
 ### Configurations
 
-- **Shell**: .bashrc and .zshrc with aliases and PATH
+- **Shell**: .bashrc and .zshrc with aliases, AI CLI shortcuts, and PATH
 - **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
+- **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
+- **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
+- **Alacritty**: cross-platform XDG config at `~/.config/alacritty/alacritty.toml`
 
 ## Usage
 
@@ -99,16 +111,19 @@ cd ~/.dotfiles
 **macOS:**
 - Homebrew (package manager)
 - iTerm2 (terminal)
+- Alacritty (terminal)
 - Colima (container runtime)
 
 **Ubuntu:**
 - build-essential
 - System packages (curl, wget, git, etc.)
+- Alacritty (terminal)
 
 ### Common CLI Tools
 - jq, yq (JSON/YAML processors)
+- JetBrainsMono Nerd Font (terminal font)
 - ripgrep, bat (modern grep/cat)
-- zellij (terminal multiplexer)
+- tmux and Zellij (terminal multiplexers)
 - kubectl, kubectx, k9s (Kubernetes tools)
 - Terraform (infrastructure as code)
 
@@ -119,8 +134,11 @@ cd ~/.dotfiles
 - **Java**: OpenJDK 17
 
 ### Configurations
-- **Shell**: .bashrc and .zshrc with aliases and PATH
+- **Shell**: .bashrc and .zshrc with aliases, AI CLI shortcuts, and PATH
 - **Git**: .gitconfig with aliases and .gitignore_global
+- **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
+- **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
+- **Alacritty**: cross-platform XDG config at `~/.config/alacritty/alacritty.toml`
 
 ## x86_64 Container Testing
 
@@ -157,6 +175,10 @@ COLIMA_CPU=4 COLIMA_MEM=8 COLIMA_DISK=20 ./scripts/x86-start.sh
 - `COLIMA_DISK`: Disk size in GB (default: 10)
 
 ## Usage
+
+### Cheat Sheet
+
+See [docs/cheatsheet.md](docs/cheatsheet.md) for Alacritty, tmux, Zellij, and Vim shortcuts.
 
 ### Basic Installation
 ```bash
@@ -197,7 +219,10 @@ COLIMA_CPU=4 COLIMA_MEM=8 COLIMA_DISK=20 ./scripts/x86-start.sh
 │   └── dev-tools.sh   # Language runtimes
 ├── config/            # Configuration files
 │   ├── shell/        # .bashrc, .zshrc
-│   └── git/          # Git config
+│   ├── git/          # Git config
+│   ├── tmux/         # tmux config
+│   ├── zellij/       # Zellij config
+│   └── alacritty/    # Alacritty config
 ├── tests/            # Test files (bats)
 └── deprecated/       # Old dotfiles (reference only)
 ```
@@ -219,6 +244,17 @@ git config --global user.email "your.email@example.com"
 ```
 
 This file is sourced by shell configs but not tracked in the repository.
+
+### AI CLI Shortcuts
+
+The shell configs include:
+
+```bash
+alias oc="opencode"
+alias cc="claude"
+```
+
+It also adds `~/.lmstudio/bin` to `PATH` for the LM Studio CLI.
 
 ## Requirements
 
