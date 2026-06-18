@@ -127,20 +127,20 @@ verify_all() {
     if [ "$IS_MACOS" = "true" ]; then
         check_tool brew "Homebrew"
         check_tool alacritty "Alacritty"
-        check_tool colima "Colima"
+        check_tool podman "Podman"
+        check_tool podman-compose "podman-compose"
         
         # Verify x86_64 emulation capability
-        if command -v colima &> /dev/null; then
+        if command -v podman &> /dev/null; then
             log_info "Testing x86_64 emulation capability..."
-            if colima start --profile x86-test --arch x86_64 --cpu 1 --memory 1 --disk 5 &> /dev/null; then
-                if docker --context colima-x86-test run --rm alpine uname -m 2>/dev/null | grep -q x86_64; then
+            if podman machine list --format '{{.Running}}' 2>/dev/null | grep -q true; then
+                if podman run --rm --platform linux/amd64 alpine uname -m 2>/dev/null | grep -q x86_64; then
                     log_info "✓ x86_64 emulation verified"
                 else
                     log_warn "x86_64 emulation test failed"
                 fi
-                colima delete --profile x86-test --force &> /dev/null
             else
-                log_warn "Could not start x86_64 test profile"
+                log_warn "No running Podman machine; skipping x86_64 emulation test"
             fi
         fi
     fi
@@ -172,15 +172,27 @@ verify_all() {
     check_tool terraform "Terraform"
     check_tool aws "AWS CLI"
     
-    # Check docker buildx
-    if docker buildx version &>/dev/null; then
-        local buildx_version=$(docker buildx version 2>&1 | head -n1)
-        log_info "✓ Docker buildx: $buildx_version"
-        ((PASSED+=1))
+    if [ "$IS_MACOS" = "true" ]; then
+        if podman compose version &>/dev/null; then
+            local compose_version=$(podman compose version 2>&1 | head -n1)
+            log_info "✓ Podman compose: $compose_version"
+            ((PASSED+=1))
+        else
+            log_error "✗ Podman compose: not found"
+            FAILED_TOOLS+=("podman-compose")
+            ((FAILED+=1))
+        fi
     else
-        log_error "✗ Docker buildx: not found"
-        FAILED_TOOLS+=("docker-buildx")
-        ((FAILED+=1))
+        # Check docker buildx
+        if docker buildx version &>/dev/null; then
+            local buildx_version=$(docker buildx version 2>&1 | head -n1)
+            log_info "✓ Docker buildx: $buildx_version"
+            ((PASSED+=1))
+        else
+            log_error "✗ Docker buildx: not found"
+            FAILED_TOOLS+=("docker-buildx")
+            ((FAILED+=1))
+        fi
     fi
     
     # Development tools

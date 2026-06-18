@@ -28,9 +28,9 @@ setup() {
     declare -f install_alacritty > /dev/null
 }
 
-@test "install_colima function exists" {
+@test "install_podman function exists" {
     source "${BATS_TEST_DIRNAME}/../install/macos.sh"
-    declare -f install_colima > /dev/null
+    declare -f install_podman > /dev/null
 }
 
 @test "Homebrew installation is idempotent" {

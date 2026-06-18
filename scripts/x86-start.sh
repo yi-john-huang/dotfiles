@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# Start Colima with x86_64 architecture profile
+# Start Podman machine for x86_64 container execution
 # Usage: ./scripts/x86-start.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,7 +9,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Source utilities
 source "${PROJECT_ROOT}/lib/utils.sh"
-source "${PROJECT_ROOT}/lib/colima-utils.sh"
+source "${PROJECT_ROOT}/lib/podman-utils.sh"
 
 # Colors
 GREEN='\033[0;32m'
@@ -17,41 +17,30 @@ NC='\033[0m'
 
 # Configuration
 PROFILE_NAME="x86"
-COLIMA_CPU="${COLIMA_CPU:-2}"
-COLIMA_MEM="${COLIMA_MEM:-4}"
-COLIMA_DISK="${COLIMA_DISK:-10}"
+PODMAN_CPU="${PODMAN_CPU:-2}"
+PODMAN_MEM="${PODMAN_MEM:-4}"
+PODMAN_DISK="${PODMAN_DISK:-10}"
+PODMAN_MEM_MIB=$((PODMAN_MEM * 1024))
 
-# Check if Colima is installed
-if ! command -v colima &> /dev/null; then
-    log_error "Colima is not installed. Run ./bootstrap.sh to install."
+# Check if Podman is installed
+if ! command -v podman &> /dev/null; then
+    log_error "Podman is not installed. Run ./bootstrap.sh to install."
     exit 1
 fi
 
-log_info "Starting Colima x86_64 profile..."
+log_info "Starting Podman machine for x86_64 containers..."
 
-# Check if profile exists and is running
-if colima_is_running "$PROFILE_NAME"; then
-    echo -e "${GREEN}✓${NC} Colima x86_64 profile is already running"
-elif colima_profile_exists "$PROFILE_NAME"; then
-    log_info "Starting existing x86 profile..."
-    colima start --profile "$PROFILE_NAME"
+if podman_machine_is_running "$PROFILE_NAME"; then
+    echo -e "${GREEN}✓${NC} Podman machine '${PROFILE_NAME}' is already running"
+    podman system connection default "$PROFILE_NAME" &> /dev/null || true
 else
-    log_info "Creating new x86_64 profile (CPU: $COLIMA_CPU, Memory: ${COLIMA_MEM}GB, Disk: ${COLIMA_DISK}GB)..."
-    colima start --profile "$PROFILE_NAME" --arch x86_64 \
-        --cpu "$COLIMA_CPU" --memory "$COLIMA_MEM" --disk "$COLIMA_DISK"
-fi
-
-# Set Docker context
-log_info "Setting Docker context to colima-${PROFILE_NAME}..."
-if docker context use "colima-${PROFILE_NAME}" 2>/dev/null; then
-    : # Success
-else
-    log_warn "Docker context not found, it will be created automatically"
+    log_info "Ensuring Podman machine '${PROFILE_NAME}' is running (CPU: $PODMAN_CPU, Memory: ${PODMAN_MEM}GB, Disk: ${PODMAN_DISK}GB)..."
+    podman_machine_ensure_running "$PROFILE_NAME" "$PODMAN_CPU" "$PODMAN_MEM_MIB" "$PODMAN_DISK"
 fi
 
 # Verify architecture
 log_info "Verifying x86_64 architecture..."
-ARCH=$(docker run --rm alpine uname -m 2>/dev/null)
+ARCH=$(podman run --rm --platform linux/amd64 alpine uname -m 2>/dev/null)
 if [ "$ARCH" = "x86_64" ]; then
     echo -e "${GREEN}✓ x86_64 environment ready${NC}"
     echo ""

@@ -56,16 +56,24 @@ install_alacritty() {
     fi
 }
 
-# Install Colima
-install_colima() {
-    if check_command colima; then
-        log_info "✓ Colima already installed"
+# Install Podman
+install_podman() {
+    if check_command podman; then
+        log_info "✓ Podman already installed"
     else
-        log_info "Installing Colima..."
-        brew install colima docker docker-compose docker-buildx
-        log_info "✓ Colima installed"
+        log_info "Installing Podman..."
+        brew install podman podman-compose
+        log_info "✓ Podman installed"
     fi
-    
+
+    if ! check_command podman-compose; then
+        log_info "Installing podman-compose..."
+        brew install podman-compose
+        log_info "✓ podman-compose installed"
+    else
+        log_info "✓ podman-compose already installed"
+    fi
+
     # Install QEMU for x86_64 emulation
     if ! check_command qemu-img; then
         log_info "Installing QEMU for x86_64 emulation..."
@@ -75,14 +83,6 @@ install_colima() {
         log_info "✓ QEMU already installed"
     fi
     
-    # Install Lima guest agents for x86_64 support
-    if ! brew list lima-additional-guestagents &> /dev/null; then
-        log_info "Installing Lima guest agents for x86_64..."
-        brew install lima-additional-guestagents
-        log_info "✓ Lima guest agents installed"
-    else
-        log_info "✓ Lima guest agents already installed"
-    fi
 }
 
 # Main installation function
@@ -92,7 +92,7 @@ install_macos_tools() {
     install_homebrew
     install_iterm2
     install_alacritty
-    install_colima
+    install_podman
     
     log_info "✓ macOS tools installation complete"
 }

@@ -27,7 +27,7 @@ cd ~/.dotfiles
 - Homebrew (package manager)
 - iTerm2 (terminal)
 - Alacritty (terminal)
-- Colima (container runtime)
+- Podman (container runtime)
 
 **Ubuntu:**
 
@@ -70,7 +70,7 @@ cd ~/.dotfiles
 - Homebrew (package manager)
 - iTerm2 (terminal)
 - Alacritty (terminal)
-- Colima (container runtime)
+- Podman (container runtime)
 
 **Ubuntu:**
 
@@ -112,7 +112,7 @@ cd ~/.dotfiles
 - Homebrew (package manager)
 - iTerm2 (terminal)
 - Alacritty (terminal)
-- Colima (container runtime)
+- Podman (container runtime)
 
 **Ubuntu:**
 - build-essential
@@ -154,7 +154,7 @@ Test containers on x86_64 architecture (useful for Apple Silicon):
 ./scripts/x86-build.sh -t myapp:x86 .
 ```
 
-### Run docker-compose tests
+### Run Podman Compose tests
 ```bash
 ./scripts/x86-compose.sh up
 ```
@@ -167,12 +167,12 @@ Test containers on x86_64 architecture (useful for Apple Silicon):
 ### Configuration
 Override defaults with environment variables:
 ```bash
-COLIMA_CPU=4 COLIMA_MEM=8 COLIMA_DISK=20 ./scripts/x86-start.sh
+PODMAN_CPU=4 PODMAN_MEM=8 PODMAN_DISK=20 ./scripts/x86-start.sh
 ```
 
-- `COLIMA_CPU`: CPU cores (default: 2)
-- `COLIMA_MEM`: Memory in GB (default: 4)
-- `COLIMA_DISK`: Disk size in GB (default: 10)
+- `PODMAN_CPU`: CPU cores (default: 2)
+- `PODMAN_MEM`: Memory in GB (default: 4)
+- `PODMAN_DISK`: Disk size in GB (default: 10)
 
 ## Usage
 

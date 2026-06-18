@@ -8,7 +8,7 @@ Simple example to test x86_64 container execution on Apple Silicon.
 ```bash
 cd examples/x86-test
 ../../scripts/x86-build.sh -t x86-test:latest .
-docker run --rm x86-test:latest
+podman run --rm --platform linux/amd64 x86-test:latest
 ```
 
 ### Build and run with x86-compose.sh
