@@ -33,9 +33,33 @@ setup() {
     declare -f install_podman > /dev/null
 }
 
+@test "repair_homebrew_permissions function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    declare -f repair_homebrew_permissions > /dev/null
+}
+
+@test "install_or_reinstall_cask_app function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    declare -f install_or_reinstall_cask_app > /dev/null
+}
+
+@test "Homebrew cask appdir defaults to user Applications" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    run get_homebrew_cask_appdir
+    [ "$status" -eq 0 ]
+    [ "$output" = "$HOME/Applications" ]
+}
+
+@test "iTerm2 installer uses user-level cask app helper" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    install_iterm2_definition="$(declare -f install_iterm2)"
+    [[ "$install_iterm2_definition" == *'install_or_reinstall_cask_app iterm2 "iTerm.app"'* ]]
+}
+
 @test "Homebrew installation is idempotent" {
     if command -v brew &> /dev/null; then
         source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+        export HOMEBREW_REPAIR_PERMISSIONS=0
         run install_homebrew
         [ "$status" -eq 0 ]
         [[ "$output" == *"already installed"* ]] || [[ "$output" == *"✓"* ]]
