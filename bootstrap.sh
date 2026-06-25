@@ -34,10 +34,21 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+configure_homebrew_cask_defaults() {
+    if [ "$IS_MACOS" = "true" ]; then
+        mkdir -p "$HOME/Applications"
+        export HOMEBREW_CASK_OPTS="--appdir=$HOME/Applications"
+        log_info "Homebrew cask apps will install to $HOME/Applications"
+    fi
+}
+
 # Main bootstrap function
 main() {
     log_info "Starting dotfiles bootstrap..."
     log_info "Platform: $OS_TYPE ($OS_ARCH)"
+
+    # Phase 0: Homebrew defaults
+    configure_homebrew_cask_defaults
     
     # Phase 1: Platform-specific installations
     if [ "$IS_MACOS" = "true" ]; then

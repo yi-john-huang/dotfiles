@@ -10,6 +10,13 @@ if [ -d "/opt/homebrew" ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# Install Homebrew cask apps at user level by default.
+export HOMEBREW_CASK_APPDIR="${HOMEBREW_CASK_APPDIR:-$HOME/Applications}"
+case " ${HOMEBREW_CASK_OPTS:-} " in
+    *" --appdir="*|*" --appdir "*) ;;
+    *) export HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS:+$HOMEBREW_CASK_OPTS }--appdir=$HOMEBREW_CASK_APPDIR" ;;
+esac
+
 # nvm
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
     export NVM_DIR="$HOME/.nvm"
