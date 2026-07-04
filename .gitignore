@@ -19,3 +19,18 @@ config/tmux/.tmux.local
 
 # Machine-local Alacritty overrides
 config/alacritty/local.toml
+
+# SDD MCP / AI agent installed components
+.claude/skills/
+.claude/rules/
+.claude/contexts/
+.claude/agents/
+.claude/hooks/
+.claude-plugin/
+.agent/
+AGENTS.md
+
+# SDD workflow artifacts; keep project steering tracked
+.spec/*
+!.spec/steering/
+!.spec/steering/**
