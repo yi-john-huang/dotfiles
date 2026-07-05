@@ -78,7 +78,12 @@ main() {
     log_info "Deploying configurations..."
     deploy_configs
     
-    # Phase 5: Verification
+    # Phase 5: Shell frameworks
+    log_info "Initializing shell frameworks..."
+    source "${DOTFILES_DIR}/install/shell.sh"
+    install_shell_frameworks || log_warn "Some shell frameworks failed initialization (see above)"
+    
+    # Phase 6: Verification
     if [ "$SKIP_VERIFY" = "false" ]; then
         log_info "Verifying installations..."
         source "${DOTFILES_DIR}/verify.sh"
@@ -94,7 +99,7 @@ deploy_configs() {
     log_info "Creating symlinks for dotfiles..."
     
     # Backup existing files
-    for file in .bashrc .zshrc .tmux.conf .gitconfig .gitignore_global; do
+    for file in .bashrc .zshrc .zimrc .tmux.conf .gitconfig .gitignore_global; do
         if [ -f "$HOME/$file" ] && [ ! -L "$HOME/$file" ]; then
             log_warn "Backing up existing $file to ${file}.backup"
             mv "$HOME/$file" "$HOME/${file}.backup"
@@ -105,6 +110,7 @@ deploy_configs() {
     # We force copy (-f) to overwrite
     cp -f "${DOTFILES_DIR}/config/shell/.bashrc" "$HOME/.bashrc"
     cp -f "${DOTFILES_DIR}/config/shell/.zshrc" "$HOME/.zshrc"
+    cp -f "${DOTFILES_DIR}/config/shell/.zimrc" "$HOME/.zimrc"
     ln -sf "${DOTFILES_DIR}/config/tmux/.tmux.conf" "$HOME/.tmux.conf"
 
     # Alacritty uses the XDG config path on both macOS and Linux.

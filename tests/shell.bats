@@ -1,0 +1,235 @@
+#!/usr/bin/env bats
+
+# Test shell framework installer functionality
+
+setup() {
+    source "${BATS_TEST_DIRNAME}/../lib/utils.sh"
+}
+
+write_zim_install_stubs() {
+    export ZIM_TEST_CALL_LOG="${BATS_TEST_TMPDIR}/zim-calls.log"
+    TEST_HOME="${BATS_TEST_TMPDIR}/home"
+    TEST_BIN="${BATS_TEST_TMPDIR}/bin"
+    mkdir -p "$TEST_HOME" "$TEST_BIN"
+    : > "$ZIM_TEST_CALL_LOG"
+
+    cat > "${TEST_BIN}/curl" <<'STUB'
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "curl $*" >> "$ZIM_TEST_CALL_LOG"
+
+output_path=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -o)
+            shift
+            output_path="$1"
+            ;;
+        -o*)
+            output_path="${1#-o}"
+            ;;
+    esac
+    shift || true
+done
+
+if [ -n "$output_path" ]; then
+    mkdir -p "$(dirname "$output_path")"
+    cat > "$output_path" <<'ZIMFW'
+#!/usr/bin/env bash
+set -euo pipefail
+zim_home="${ZIM_HOME:-$HOME/.zim}"
+mkdir -p "$zim_home"
+printf '%s\n' "initialized by fake zimfw" > "$zim_home/init.zsh"
+ZIMFW
+    chmod +x "$output_path"
+else
+    cat <<'INSTALLER'
+#!/usr/bin/env bash
+set -euo pipefail
+zim_home="${ZIM_HOME:-$HOME/.zim}"
+mkdir -p "$zim_home"
+printf '%s\n' "installed by fake zim installer" > "$zim_home/zimfw.zsh"
+printf '%s\n' "initialized by fake zim installer" > "$zim_home/init.zsh"
+INSTALLER
+fi
+STUB
+    chmod +x "${TEST_BIN}/curl"
+
+    cat > "${TEST_BIN}/zsh" <<'STUB'
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "zsh $*" >> "$ZIM_TEST_CALL_LOG"
+
+if [ "$#" -gt 0 ]; then
+    bash "$@"
+else
+    bash
+fi
+STUB
+    chmod +x "${TEST_BIN}/zsh"
+
+    export HOME="$TEST_HOME"
+    export ZDOTDIR="$TEST_HOME"
+    export ZIM_HOME="$TEST_HOME/.zim"
+    export PATH="$TEST_BIN:$PATH"
+}
+
+assert_file_contains() {
+    local file="$1"
+    local expected="$2"
+    [[ "$(cat "$file")" == *"$expected"* ]]
+}
+
+assert_file_not_contains() {
+    local file="$1"
+    local unexpected="$2"
+    [[ "$(cat "$file")" != *"$unexpected"* ]]
+}
+
+@test "shell installer exposes callable Zim entrypoints" {
+    source "${BATS_TEST_DIRNAME}/../install/shell.sh"
+
+    declare -F install_zim > /dev/null
+    declare -F install_shell_frameworks > /dev/null
+}
+
+
+@test "install_zim creates framework files for a new home without real network access" {
+    source "${BATS_TEST_DIRNAME}/../install/shell.sh"
+    write_zim_install_stubs
+
+    run install_zim
+
+    [ "$status" -eq 0 ]
+    [ -s "$ZIM_HOME/zimfw.zsh" ]
+    [ -s "$ZIM_HOME/init.zsh" ]
+    [ -s "$HOME/.zimrc" ]
+    assert_file_contains "$ZIM_TEST_CALL_LOG" "curl "
+    assert_file_contains "$ZIM_TEST_CALL_LOG" "zsh -c"
+}
+
+@test "install_zim recognizes an initialized framework and does not fetch or regenerate" {
+    source "${BATS_TEST_DIRNAME}/../install/shell.sh"
+    write_zim_install_stubs
+    mkdir -p "$ZIM_HOME"
+    printf '%s\n' "existing zimfw" > "$ZIM_HOME/zimfw.zsh"
+    printf '%s\n' "existing zimrc" > "$HOME/.zimrc"
+    printf '%s\n' "existing init" > "$ZIM_HOME/init.zsh"
+    touch -t 202001010000 "$ZIM_HOME/zimfw.zsh" "$HOME/.zimrc"
+    touch -t 202001010001 "$ZIM_HOME/init.zsh"
+
+    run install_zim
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$ZIM_HOME/zimfw.zsh")" = "existing zimfw" ]
+    [ "$(cat "$HOME/.zimrc")" = "existing zimrc" ]
+    [ "$(cat "$ZIM_HOME/init.zsh")" = "existing init" ]
+    assert_file_not_contains "$ZIM_TEST_CALL_LOG" "curl "
+    assert_file_not_contains "$ZIM_TEST_CALL_LOG" "zsh "
+}
+
+@test "install_shell_frameworks invokes Zim setup" {
+    source "${BATS_TEST_DIRNAME}/../install/shell.sh"
+    write_zim_install_stubs
+    SHELL_FRAMEWORK_CALL_LOG="${BATS_TEST_TMPDIR}/shell-framework-calls.log"
+    : > "$SHELL_FRAMEWORK_CALL_LOG"
+    install_zim() {
+        echo "zim" >> "$SHELL_FRAMEWORK_CALL_LOG"
+        mkdir -p "${HOME}/.zim"
+        printf '%s\n' "initialized by install_shell_frameworks" > "${HOME}/.zim/init.zsh"
+    }
+
+    run install_shell_frameworks
+
+    [ "$status" -eq 0 ]
+    assert_file_contains "$SHELL_FRAMEWORK_CALL_LOG" "zim"
+    [ -s "$HOME/.zim/init.zsh" ]
+}
+
+@test "bootstrap initializes shell frameworks after deploying Zim config" {
+    local fixture_root="${BATS_TEST_TMPDIR}/dotfiles"
+    local fixture_home="${BATS_TEST_TMPDIR}/home"
+    local fixture_bin="${BATS_TEST_TMPDIR}/bin"
+    local order_log="${BATS_TEST_TMPDIR}/bootstrap-order.log"
+    mkdir -p \
+        "$fixture_root/lib" \
+        "$fixture_root/install" \
+        "$fixture_root/config/shell" \
+        "$fixture_root/config/tmux" \
+        "$fixture_root/config/git" \
+        "$fixture_root/config/alacritty" \
+        "$fixture_root/config/zellij" \
+        "$fixture_home" \
+        "$fixture_bin"
+    : > "$order_log"
+
+    cp "${BATS_TEST_DIRNAME}/../bootstrap.sh" "$fixture_root/bootstrap.sh"
+
+    cat > "$fixture_root/lib/detect.sh" <<'STUB'
+#!/usr/bin/env bash
+OS_TYPE="Darwin"
+OS_ARCH="aarch64"
+IS_MACOS="true"
+IS_UBUNTU="false"
+export OS_TYPE OS_ARCH IS_MACOS IS_UBUNTU
+STUB
+
+    cat > "$fixture_root/lib/utils.sh" <<'STUB'
+#!/usr/bin/env bash
+log_info() { echo "[INFO] $*"; }
+log_warn() { echo "[WARN] $*"; }
+log_error() { echo "[ERROR] $*" >&2; }
+check_command() { command -v "$1" > /dev/null 2>&1; }
+STUB
+
+    cat > "$fixture_root/install/macos.sh" <<'STUB'
+#!/usr/bin/env bash
+install_macos_tools() { echo "macos" >> "$BOOTSTRAP_ORDER_LOG"; }
+STUB
+    cat > "$fixture_root/install/common.sh" <<'STUB'
+#!/usr/bin/env bash
+install_common_tools() { echo "common" >> "$BOOTSTRAP_ORDER_LOG"; }
+STUB
+    cat > "$fixture_root/install/dev-tools.sh" <<'STUB'
+#!/usr/bin/env bash
+install_dev_tools() { echo "dev-tools" >> "$BOOTSTRAP_ORDER_LOG"; }
+STUB
+    cat > "$fixture_root/install/shell.sh" <<'STUB'
+#!/usr/bin/env bash
+install_shell_frameworks() {
+    if [ ! -f "$HOME/.zimrc" ]; then
+        echo "shell:missing-zimrc" >> "$BOOTSTRAP_ORDER_LOG"
+        return 1
+    fi
+    printf 'shell:%s\n' "$(cat "$HOME/.zimrc")" >> "$BOOTSTRAP_ORDER_LOG"
+}
+STUB
+
+    printf '%s\n' "fixture bashrc" > "$fixture_root/config/shell/.bashrc"
+    printf '%s\n' "fixture zshrc" > "$fixture_root/config/shell/.zshrc"
+    printf '%s\n' "fixture zim config" > "$fixture_root/config/shell/.zimrc"
+    printf '%s\n' "fixture tmux" > "$fixture_root/config/tmux/.tmux.conf"
+    printf '%s\n' "fixture git config" > "$fixture_root/config/git/.gitconfig"
+    printf '%s\n' "fixture gitignore" > "$fixture_root/config/git/.gitignore_global"
+    printf '%s\n' "fixture alacritty" > "$fixture_root/config/alacritty/alacritty.toml"
+    printf '%s\n' "fixture zellij" > "$fixture_root/config/zellij/config.kdl"
+
+    cat > "$fixture_bin/git" <<'STUB'
+#!/usr/bin/env bash
+echo "git $*" >> "$BOOTSTRAP_ORDER_LOG"
+exit 0
+STUB
+    chmod +x "$fixture_bin/git"
+
+    run env \
+        HOME="$fixture_home" \
+        BOOTSTRAP_ORDER_LOG="$order_log" \
+        PATH="$fixture_bin:$PATH" \
+        bash "$fixture_root/bootstrap.sh" --skip-verify
+
+    [ "$status" -eq 0 ]
+    assert_file_contains "$order_log" "shell:fixture zim config"
+    [ "$(cat "$fixture_home/.zimrc")" = "fixture zim config" ]
+}

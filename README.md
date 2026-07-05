@@ -53,7 +53,7 @@ cd ~/.dotfiles
 
 ### Configurations
 
-- **Shell**: .bashrc and .zshrc with aliases, AI CLI shortcuts, and PATH
+- **Shell**: .bashrc, .zshrc, and .zimrc with Zim, aliases, AI CLI shortcuts, and PATH
 - **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
 - **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
 - **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
@@ -75,7 +75,7 @@ cd ~/.dotfiles
 **Ubuntu:**
 
 - build-essential
-- System packages (curl, wget, git, etc.)
+- System packages (curl, wget, git, zsh, etc.)
 - Alacritty (terminal)
 
 ### Common CLI Tools
@@ -96,7 +96,7 @@ cd ~/.dotfiles
 
 ### Configurations
 
-- **Shell**: .bashrc and .zshrc with aliases, AI CLI shortcuts, and PATH
+- **Shell**: .bashrc, .zshrc, and .zimrc with Zim, aliases, AI CLI shortcuts, and PATH
 - **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
 - **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
 - **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
@@ -116,7 +116,7 @@ cd ~/.dotfiles
 
 **Ubuntu:**
 - build-essential
-- System packages (curl, wget, git, etc.)
+- System packages (curl, wget, git, zsh, etc.)
 - Alacritty (terminal)
 
 ### Common CLI Tools
@@ -134,7 +134,7 @@ cd ~/.dotfiles
 - **Java**: OpenJDK 17
 
 ### Configurations
-- **Shell**: .bashrc and .zshrc with aliases, AI CLI shortcuts, and PATH
+- **Shell**: .bashrc, .zshrc, and .zimrc with Zim, aliases, AI CLI shortcuts, and PATH
 - **Git**: .gitconfig with aliases and .gitignore_global
 - **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
 - **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation

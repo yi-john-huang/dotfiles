@@ -46,7 +46,7 @@ fi
 
 # Zim framework initialization
 # Must be after PATH setup but BEFORE anything that might trigger compinit
-ZIM_HOME="${HOME}/.zim"
+ZIM_HOME="${ZIM_HOME:-${ZDOTDIR:-${HOME}}/.zim}"
 if [[ -s "${ZIM_HOME}/init.zsh" ]]; then
     source "${ZIM_HOME}/init.zsh"
 fi

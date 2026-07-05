@@ -44,6 +44,7 @@ install_system_packages() {
         wget
         git
         unzip
+        zsh
         software-properties-common
         apt-transport-https
         ca-certificates

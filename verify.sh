@@ -118,6 +118,20 @@ check_optional_tool() {
     fi
 }
 
+check_zim() {
+    local zdotdir="${ZDOTDIR:-$HOME}"
+    local zim_home="${ZIM_HOME:-${zdotdir}/.zim}"
+
+    if [ -s "${zim_home}/init.zsh" ]; then
+        log_info "✓ Zim framework: initialized"
+        ((PASSED+=1))
+    else
+        log_error "✗ Zim framework: ${zim_home}/init.zsh not found"
+        FAILED_TOOLS+=("Zim framework")
+        ((FAILED+=1))
+    fi
+}
+
 # Verify all installations
 verify_all() {
     log_info "Verifying installations..."
@@ -149,7 +163,8 @@ verify_all() {
         check_tool alacritty "Alacritty"
     fi
     
-    # Common tools
+    # Common tools and shell framework
+    check_tool zsh "zsh"
     check_tool jq "jq"
     check_tool yq "yq"
     check_tool rg "ripgrep"
@@ -163,6 +178,7 @@ verify_all() {
         ((FAILED++))
     fi
     check_tool tmux "tmux"
+    check_zim
     check_tool zellij "Zellij"
     check_tool kubectl "kubectl"
     check_tool kubectx "kubectx"

@@ -73,10 +73,11 @@ Validation and test harness
 6. Install common cross-platform CLI tools.
 7. Install development runtimes and language tooling.
 8. Deploy dotfile configurations.
-9. Run verification unless explicitly skipped.
+9. Initialize shell frameworks that depend on deployed config, including Zim.
+10. Run verification unless explicitly skipped.
 
 ### Configuration Deployment
-- Shell rc files are copied to `~/.bashrc` and `~/.zshrc` so users can make local edits.
+- Shell files are copied to `~/.bashrc`, `~/.zshrc`, and `~/.zimrc` so users can make local edits.
 - tmux, Alacritty, Zellij, and global Git ignore files are symlinked from the repository.
 - Git config is included from `~/.gitconfig` using `include.path` instead of replacing the whole user config.
 - Existing non-symlink user files are backed up before replacement.

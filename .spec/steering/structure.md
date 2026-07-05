@@ -19,9 +19,10 @@ dotfiles/
 │   ├── macos.sh              # macOS-specific packages and apps
 │   ├── ubuntu.sh             # Ubuntu-specific packages and Docker setup
 │   ├── common.sh             # Cross-platform CLI tools
-│   └── dev-tools.sh          # Language runtimes and developer tooling
+│   ├── dev-tools.sh          # Language runtimes and developer tooling
+│   └── shell.sh              # Shell framework bootstrap, including Zim
 ├── config/                   # Dotfile payloads deployed by bootstrap
-│   ├── shell/                # .bashrc and .zshrc templates
+│   ├── shell/                # .bashrc, .zshrc, and .zimrc templates
 │   ├── git/                  # Git config include and global ignore
 │   ├── tmux/                 # tmux configuration
 │   ├── zellij/               # Zellij configuration
