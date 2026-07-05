@@ -28,7 +28,10 @@ config/alacritty/local.toml
 .claude/hooks/
 .claude-plugin/
 .agent/
+.agents/
+.codex/
 AGENTS.md
+CLAUDE.md
 
 # SDD workflow artifacts; keep project steering tracked
 .spec/*
