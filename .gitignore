@@ -30,6 +30,7 @@ config/alacritty/local.toml
 .agent/
 .agents/
 .codex/
+.kiro/
 AGENTS.md
 CLAUDE.md
 
