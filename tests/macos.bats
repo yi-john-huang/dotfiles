@@ -28,6 +28,16 @@ setup() {
     declare -f install_alacritty > /dev/null
 }
 
+@test "install_oh_my_posh function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    declare -f install_oh_my_posh > /dev/null
+}
+
+@test "install_ice function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    declare -f install_ice > /dev/null
+}
+
 @test "install_podman function exists" {
     source "${BATS_TEST_DIRNAME}/../install/macos.sh"
     declare -f install_podman > /dev/null
@@ -54,6 +64,12 @@ setup() {
     source "${BATS_TEST_DIRNAME}/../install/macos.sh"
     install_iterm2_definition="$(declare -f install_iterm2)"
     [[ "$install_iterm2_definition" == *'install_or_reinstall_cask_app iterm2 "iTerm.app"'* ]]
+}
+
+@test "Ice installer uses user-level cask app helper" {
+    source "${BATS_TEST_DIRNAME}/../install/macos.sh"
+    install_ice_definition="$(declare -f install_ice)"
+    [[ "$install_ice_definition" == *'install_or_reinstall_cask_app jordanbaird-ice "Ice.app"'* ]]
 }
 
 @test "Homebrew installation is idempotent" {

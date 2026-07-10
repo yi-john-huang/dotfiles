@@ -175,6 +175,27 @@ install_alacritty() {
     fi
 }
 
+# Install Oh My Posh
+install_oh_my_posh() {
+    if check_command omp; then
+        log_info "✓ Oh My Posh already installed"
+        return 0
+    fi
+
+    log_info "Installing Oh My Posh..."
+    if brew install can1357/tap/omp; then
+        log_info "✓ Oh My Posh installed"
+    else
+        log_warn "Oh My Posh installation failed"
+        return 1
+    fi
+}
+
+# Install Ice
+install_ice() {
+    install_or_reinstall_cask_app jordanbaird-ice "Ice.app"
+}
+
 # Install Podman
 install_podman() {
     if check_command podman; then
@@ -211,6 +232,8 @@ install_macos_tools() {
     install_homebrew
     install_iterm2
     install_alacritty
+    install_oh_my_posh
+    install_ice
     install_podman
     
     log_info "✓ macOS tools installation complete"

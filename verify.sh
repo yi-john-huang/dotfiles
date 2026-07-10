@@ -141,6 +141,7 @@ verify_all() {
     if [ "$IS_MACOS" = "true" ]; then
         check_tool brew "Homebrew"
         check_tool alacritty "Alacritty"
+        check_tool omp "Oh My Posh"
         check_tool podman "Podman"
         check_tool podman-compose "podman-compose"
         
@@ -178,6 +179,9 @@ verify_all() {
         ((FAILED++))
     fi
     check_tool tmux "tmux"
+    check_tool btop "btop"
+    check_tool gh "GitHub CLI"
+    check_tool glab "GitLab CLI"
     check_zim
     check_tool zellij "Zellij"
     check_tool kubectl "kubectl"

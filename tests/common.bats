@@ -32,6 +32,21 @@ setup() {
     declare -f install_bat > /dev/null
 }
 
+@test "install_btop function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_btop > /dev/null
+}
+
+@test "install_github_cli function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_github_cli > /dev/null
+}
+
+@test "install_gitlab_cli function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_gitlab_cli > /dev/null
+}
+
 @test "install_tmux function exists" {
     source "${BATS_TEST_DIRNAME}/../install/common.sh"
     declare -f install_tmux > /dev/null

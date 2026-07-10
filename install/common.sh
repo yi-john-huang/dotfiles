@@ -162,6 +162,54 @@ install_bat() {
     fi
 }
 
+# Install btop
+install_btop() {
+    if check_command btop; then
+        log_info "✓ btop already installed"
+        return 0
+    fi
+
+    log_info "Installing btop..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install btop
+    else
+        sudo apt-get install -y btop
+    fi
+    log_info "✓ btop installed"
+}
+
+# Install GitHub CLI
+install_github_cli() {
+    if check_command gh; then
+        log_info "✓ GitHub CLI already installed"
+        return 0
+    fi
+
+    log_info "Installing GitHub CLI..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install gh
+    else
+        sudo apt-get install -y gh
+    fi
+    log_info "✓ GitHub CLI installed"
+}
+
+# Install GitLab CLI
+install_gitlab_cli() {
+    if check_command glab; then
+        log_info "✓ GitLab CLI already installed"
+        return 0
+    fi
+
+    log_info "Installing GitLab CLI..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install glab
+    else
+        sudo apt-get install -y glab
+    fi
+    log_info "✓ GitLab CLI installed"
+}
+
 # Install tmux
 install_tmux() {
     if check_command tmux; then
@@ -387,6 +435,9 @@ install_common_tools() {
     install_yq || ((failed+=1))
     install_ripgrep || ((failed+=1))
     install_bat || ((failed+=1))
+    install_btop || ((failed+=1))
+    install_github_cli || ((failed+=1))
+    install_gitlab_cli || ((failed+=1))
     install_tmux || ((failed+=1))
     install_zellij || ((failed+=1))
     install_kubectl || ((failed+=1))
