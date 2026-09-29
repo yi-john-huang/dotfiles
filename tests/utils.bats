@@ -63,7 +63,11 @@ setup() {
     local file="$BATS_TEST_TMPDIR/data"
     printf 'hello\n' > "$file"
     local sum
-    sum="$(shasum -a 256 "$file" | cut -d' ' -f1)"
+    if command -v sha256sum > /dev/null 2>&1; then
+        sum="$(sha256sum "$file" | cut -d' ' -f1)"
+    else
+        sum="$(shasum -a 256 "$file" | cut -d' ' -f1)"
+    fi
 
     run verify_sha256 "$sum" "$file"
 
