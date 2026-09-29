@@ -38,3 +38,8 @@ CLAUDE.md
 .spec/*
 !.spec/steering/
 !.spec/steering/**
+
+# BEGIN sdd-mcp generated agent files
+.claude/
+.sdd-mcp/
+# END sdd-mcp generated agent files

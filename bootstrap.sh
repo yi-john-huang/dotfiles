@@ -133,6 +133,27 @@ deploy_configs() {
     fi
     ln -sf "${DOTFILES_DIR}/config/zellij/config.kdl" "$zellij_config_dir/config.kdl"
 
+    # Neovim uses one tracked XDG config directory.
+    local nvim_source="${DOTFILES_DIR}/config/nvim"
+    local nvim_target="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+    local nvim_backup="${XDG_CONFIG_HOME:-$HOME/.config}/nvim.backup"
+    mkdir -p "$(dirname "$nvim_target")"
+    if [ -L "$nvim_target" ] && [ "$(readlink "$nvim_target")" = "$nvim_source" ]; then
+        log_info "✓ Neovim config already linked"
+    else
+        if [ -e "$nvim_target" ] || [ -L "$nvim_target" ]; then
+            if [ -e "$nvim_backup" ] || [ -L "$nvim_backup" ]; then
+                log_error "Cannot deploy Neovim config: both paths contain user data:"
+                log_error "  current: $nvim_target"
+                log_error "  backup:  $nvim_backup"
+                return 1
+            fi
+            log_warn "Backing up existing Neovim config to $nvim_backup"
+            mv "$nvim_target" "$nvim_backup"
+        fi
+        ln -s "$nvim_source" "$nvim_target"
+    fi
+
     # Git config (using include instead of symlink)
     if [ ! -f "$HOME/.gitconfig" ] || [ -L "$HOME/.gitconfig" ]; then
         # If it's a symlink or doesn't exist, start fresh

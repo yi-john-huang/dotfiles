@@ -27,6 +27,7 @@ dotfiles/
 │   ├── tmux/                 # tmux configuration
 │   ├── zellij/               # Zellij configuration
 │   ├── alacritty/            # Alacritty configuration
+│   ├── nvim/                 # LazyVim starter, IDE overrides, and plugin lockfile
 │   └── ghostty/              # Reserved terminal configuration directory
 ├── scripts/                  # Operational helper scripts
 │   ├── x86-start.sh          # Start Podman x86_64 machine
@@ -34,7 +35,7 @@ dotfiles/
 │   ├── x86-compose.sh        # Run compose with amd64 platform
 │   └── x86-stop.sh           # Stop Podman x86_64 machine
 ├── tests/                    # Bats tests for installers and helpers
-├── docs/                     # Supplemental user documentation
+├── docs/                     # Supplemental guides, including docs/neovim.md
 ├── deprecated/               # Historical dotfiles kept for reference
 └── .spec/steering/           # Tracked SDD steering documents only
 ```
@@ -108,8 +109,9 @@ Installer modules that intentionally continue after individual install failures 
 - Back up existing non-symlink user files before replacing them.
 - Copy shell rc files when local edits are expected.
 - Symlink stable application configs from `config/` when repository updates should flow through automatically.
+- Deploy the whole `config/nvim/` directory to `${XDG_CONFIG_HOME:-$HOME/.config}/nvim`. Treat any different target as user data, move it once to `nvim.backup`, and abort rather than overwrite an existing backup.
 - Use Git `include.path` for repository-managed Git config instead of overwriting a user's entire `~/.gitconfig`.
-- Prefer XDG config directories for terminal applications: `${XDG_CONFIG_HOME:-$HOME/.config}/alacritty` and `${XDG_CONFIG_HOME:-$HOME/.config}/zellij`.
+- Prefer XDG config directories for Neovim and terminal applications.
 - Keep user secrets, Git credentials, and machine-specific aliases in `~/.extra` or local Git config, not in tracked files.
 
 ## Error Handling Patterns
@@ -123,6 +125,7 @@ Installer modules that intentionally continue after individual install failures 
 - `tests/*.bats` contains Bats tests for module existence, platform detection, utility helpers, and architecture-sensitive binaries.
 - Add or update Bats tests when adding installer functions, detection branches, helper functions, or deployment behavior that can be exercised without mutating the host.
 - Use `./verify.sh` for end-to-end installed-tool validation after bootstrap changes.
+- Neovim changes require a clean `:Lazy sync`, `:checkhealth lazyvim`, and a smoke path covering any changed LSP or formatter contract.
 - Use UTM or the x86 Podman helpers for architecture and platform coverage that cannot be represented by unit-style Bats tests.
 
 ## Documentation Rules

@@ -88,6 +88,92 @@ assert_file_not_contains() {
     [[ "$(cat "$file")" != *"$unexpected"* ]]
 }
 
+write_bootstrap_fixture() {
+    FIXTURE_ROOT="${BATS_TEST_TMPDIR}/dotfiles"
+    FIXTURE_HOME="${BATS_TEST_TMPDIR}/home"
+    FIXTURE_BIN="${BATS_TEST_TMPDIR}/bin"
+    BOOTSTRAP_ORDER_LOG="${BATS_TEST_TMPDIR}/bootstrap-order.log"
+    mkdir -p \
+        "$FIXTURE_ROOT/lib" \
+        "$FIXTURE_ROOT/install" \
+        "$FIXTURE_ROOT/config/shell" \
+        "$FIXTURE_ROOT/config/tmux" \
+        "$FIXTURE_ROOT/config/git" \
+        "$FIXTURE_ROOT/config/alacritty" \
+        "$FIXTURE_ROOT/config/zellij" \
+        "$FIXTURE_ROOT/config/nvim" \
+        "$FIXTURE_HOME" \
+        "$FIXTURE_BIN"
+    : > "$BOOTSTRAP_ORDER_LOG"
+
+    cp "${BATS_TEST_DIRNAME}/../bootstrap.sh" "$FIXTURE_ROOT/bootstrap.sh"
+
+    cat > "$FIXTURE_ROOT/lib/detect.sh" <<'STUB'
+#!/usr/bin/env bash
+OS_TYPE="Darwin"
+OS_ARCH="aarch64"
+IS_MACOS="true"
+IS_UBUNTU="false"
+export OS_TYPE OS_ARCH IS_MACOS IS_UBUNTU
+STUB
+
+    cat > "$FIXTURE_ROOT/lib/utils.sh" <<'STUB'
+#!/usr/bin/env bash
+log_info() { echo "[INFO] $*"; }
+log_warn() { echo "[WARN] $*"; }
+log_error() { echo "[ERROR] $*" >&2; }
+check_command() { command -v "$1" > /dev/null 2>&1; }
+STUB
+
+    cat > "$FIXTURE_ROOT/install/macos.sh" <<'STUB'
+#!/usr/bin/env bash
+install_macos_tools() { echo "macos" >> "$BOOTSTRAP_ORDER_LOG"; }
+STUB
+    cat > "$FIXTURE_ROOT/install/common.sh" <<'STUB'
+#!/usr/bin/env bash
+install_common_tools() { echo "common" >> "$BOOTSTRAP_ORDER_LOG"; }
+STUB
+    cat > "$FIXTURE_ROOT/install/dev-tools.sh" <<'STUB'
+#!/usr/bin/env bash
+install_dev_tools() { echo "dev-tools" >> "$BOOTSTRAP_ORDER_LOG"; }
+STUB
+    cat > "$FIXTURE_ROOT/install/shell.sh" <<'STUB'
+#!/usr/bin/env bash
+install_shell_frameworks() {
+    if [ ! -f "$HOME/.zimrc" ]; then
+        echo "shell:missing-zimrc" >> "$BOOTSTRAP_ORDER_LOG"
+        return 1
+    fi
+    printf 'shell:%s\n' "$(cat "$HOME/.zimrc")" >> "$BOOTSTRAP_ORDER_LOG"
+}
+STUB
+
+    printf '%s\n' "fixture bashrc" > "$FIXTURE_ROOT/config/shell/.bashrc"
+    printf '%s\n' "fixture zshrc" > "$FIXTURE_ROOT/config/shell/.zshrc"
+    printf '%s\n' "fixture zim config" > "$FIXTURE_ROOT/config/shell/.zimrc"
+    printf '%s\n' "fixture tmux" > "$FIXTURE_ROOT/config/tmux/.tmux.conf"
+    printf '%s\n' "fixture git config" > "$FIXTURE_ROOT/config/git/.gitconfig"
+    printf '%s\n' "fixture gitignore" > "$FIXTURE_ROOT/config/git/.gitignore_global"
+    printf '%s\n' "fixture alacritty" > "$FIXTURE_ROOT/config/alacritty/alacritty.toml"
+    printf '%s\n' "fixture zellij" > "$FIXTURE_ROOT/config/zellij/config.kdl"
+    printf '%s\n' "fixture nvim" > "$FIXTURE_ROOT/config/nvim/init.lua"
+
+    cat > "$FIXTURE_BIN/git" <<'STUB'
+#!/usr/bin/env bash
+echo "git $*" >> "$BOOTSTRAP_ORDER_LOG"
+exit 0
+STUB
+    chmod +x "$FIXTURE_BIN/git"
+}
+
+run_bootstrap_fixture() {
+    run env \
+        HOME="$FIXTURE_HOME" \
+        BOOTSTRAP_ORDER_LOG="$BOOTSTRAP_ORDER_LOG" \
+        PATH="$FIXTURE_BIN:$PATH" \
+        bash "$FIXTURE_ROOT/bootstrap.sh" --skip-verify
+}
+
 @test "shell installer exposes callable Zim entrypoints" {
     source "${BATS_TEST_DIRNAME}/../install/shell.sh"
 
@@ -148,88 +234,65 @@ assert_file_not_contains() {
     [ -s "$HOME/.zim/init.zsh" ]
 }
 
-@test "bootstrap initializes shell frameworks after deploying Zim config" {
-    local fixture_root="${BATS_TEST_TMPDIR}/dotfiles"
-    local fixture_home="${BATS_TEST_TMPDIR}/home"
-    local fixture_bin="${BATS_TEST_TMPDIR}/bin"
-    local order_log="${BATS_TEST_TMPDIR}/bootstrap-order.log"
-    mkdir -p \
-        "$fixture_root/lib" \
-        "$fixture_root/install" \
-        "$fixture_root/config/shell" \
-        "$fixture_root/config/tmux" \
-        "$fixture_root/config/git" \
-        "$fixture_root/config/alacritty" \
-        "$fixture_root/config/zellij" \
-        "$fixture_home" \
-        "$fixture_bin"
-    : > "$order_log"
+@test "bootstrap deploys Neovim safely and initializes shell frameworks" {
+    write_bootstrap_fixture
+    mkdir -p "$FIXTURE_HOME/.config/nvim"
+    printf '%s\n' "unmanaged config" > "$FIXTURE_HOME/.config/nvim/sentinel"
 
-    cp "${BATS_TEST_DIRNAME}/../bootstrap.sh" "$fixture_root/bootstrap.sh"
-
-    cat > "$fixture_root/lib/detect.sh" <<'STUB'
-#!/usr/bin/env bash
-OS_TYPE="Darwin"
-OS_ARCH="aarch64"
-IS_MACOS="true"
-IS_UBUNTU="false"
-export OS_TYPE OS_ARCH IS_MACOS IS_UBUNTU
-STUB
-
-    cat > "$fixture_root/lib/utils.sh" <<'STUB'
-#!/usr/bin/env bash
-log_info() { echo "[INFO] $*"; }
-log_warn() { echo "[WARN] $*"; }
-log_error() { echo "[ERROR] $*" >&2; }
-check_command() { command -v "$1" > /dev/null 2>&1; }
-STUB
-
-    cat > "$fixture_root/install/macos.sh" <<'STUB'
-#!/usr/bin/env bash
-install_macos_tools() { echo "macos" >> "$BOOTSTRAP_ORDER_LOG"; }
-STUB
-    cat > "$fixture_root/install/common.sh" <<'STUB'
-#!/usr/bin/env bash
-install_common_tools() { echo "common" >> "$BOOTSTRAP_ORDER_LOG"; }
-STUB
-    cat > "$fixture_root/install/dev-tools.sh" <<'STUB'
-#!/usr/bin/env bash
-install_dev_tools() { echo "dev-tools" >> "$BOOTSTRAP_ORDER_LOG"; }
-STUB
-    cat > "$fixture_root/install/shell.sh" <<'STUB'
-#!/usr/bin/env bash
-install_shell_frameworks() {
-    if [ ! -f "$HOME/.zimrc" ]; then
-        echo "shell:missing-zimrc" >> "$BOOTSTRAP_ORDER_LOG"
-        return 1
-    fi
-    printf 'shell:%s\n' "$(cat "$HOME/.zimrc")" >> "$BOOTSTRAP_ORDER_LOG"
-}
-STUB
-
-    printf '%s\n' "fixture bashrc" > "$fixture_root/config/shell/.bashrc"
-    printf '%s\n' "fixture zshrc" > "$fixture_root/config/shell/.zshrc"
-    printf '%s\n' "fixture zim config" > "$fixture_root/config/shell/.zimrc"
-    printf '%s\n' "fixture tmux" > "$fixture_root/config/tmux/.tmux.conf"
-    printf '%s\n' "fixture git config" > "$fixture_root/config/git/.gitconfig"
-    printf '%s\n' "fixture gitignore" > "$fixture_root/config/git/.gitignore_global"
-    printf '%s\n' "fixture alacritty" > "$fixture_root/config/alacritty/alacritty.toml"
-    printf '%s\n' "fixture zellij" > "$fixture_root/config/zellij/config.kdl"
-
-    cat > "$fixture_bin/git" <<'STUB'
-#!/usr/bin/env bash
-echo "git $*" >> "$BOOTSTRAP_ORDER_LOG"
-exit 0
-STUB
-    chmod +x "$fixture_bin/git"
-
-    run env \
-        HOME="$fixture_home" \
-        BOOTSTRAP_ORDER_LOG="$order_log" \
-        PATH="$fixture_bin:$PATH" \
-        bash "$fixture_root/bootstrap.sh" --skip-verify
+    run_bootstrap_fixture
 
     [ "$status" -eq 0 ]
-    assert_file_contains "$order_log" "shell:fixture zim config"
-    [ "$(cat "$fixture_home/.zimrc")" = "fixture zim config" ]
+    assert_file_contains "$BOOTSTRAP_ORDER_LOG" "shell:fixture zim config"
+    [ "$(cat "$FIXTURE_HOME/.zimrc")" = "fixture zim config" ]
+    [ "$(cat "$FIXTURE_HOME/.config/nvim.backup/sentinel")" = "unmanaged config" ]
+    [ -L "$FIXTURE_HOME/.config/nvim" ]
+    [ "$(readlink "$FIXTURE_HOME/.config/nvim")" = "$FIXTURE_ROOT/config/nvim" ]
+
+    run_bootstrap_fixture
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$FIXTURE_HOME/.config/nvim.backup/sentinel")" = "unmanaged config" ]
+    [ ! -e "$FIXTURE_HOME/.config/nvim.backup/nvim" ]
+}
+
+@test "bootstrap refuses a Neovim backup collision" {
+    write_bootstrap_fixture
+    mkdir -p "$FIXTURE_HOME/.config/nvim" "$FIXTURE_HOME/.config/nvim.backup"
+    printf '%s\n' "current config" > "$FIXTURE_HOME/.config/nvim/sentinel"
+    printf '%s\n' "preserved backup" > "$FIXTURE_HOME/.config/nvim.backup/sentinel"
+
+    run_bootstrap_fixture
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"$FIXTURE_HOME/.config/nvim"* ]]
+    [[ "$output" == *"$FIXTURE_HOME/.config/nvim.backup"* ]]
+    [ "$(cat "$FIXTURE_HOME/.config/nvim/sentinel")" = "current config" ]
+    [ "$(cat "$FIXTURE_HOME/.config/nvim.backup/sentinel")" = "preserved backup" ]
+}
+
+@test "shell configs default EDITOR and VISUAL to Neovim" {
+    local shell_home="${BATS_TEST_TMPDIR}/editor-home"
+    mkdir -p "$shell_home"
+
+    run env HOME="$shell_home" bash --noprofile --norc -c \
+        "source '${BATS_TEST_DIRNAME}/../config/shell/.bashrc'; printf '%s:%s' \"\$EDITOR\" \"\$VISUAL\""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"nvim:nvim" ]]
+
+    run env HOME="$shell_home" ZDOTDIR="$shell_home" zsh -f -c \
+        "source '${BATS_TEST_DIRNAME}/../config/shell/.zshrc'; printf '%s:%s' \"\$EDITOR\" \"\$VISUAL\""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"nvim:nvim" ]]
+}
+
+@test "user extras can override the default editor" {
+    local shell_home="${BATS_TEST_TMPDIR}/editor-override-home"
+    mkdir -p "$shell_home"
+    printf '%s\n' 'export EDITOR="custom-editor"' 'export VISUAL="$EDITOR"' > "$shell_home/.extra"
+
+    run env HOME="$shell_home" bash --noprofile --norc -c \
+        "source '${BATS_TEST_DIRNAME}/../config/shell/.bashrc'; printf '%s:%s' \"\$EDITOR\" \"\$VISUAL\""
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"custom-editor:custom-editor" ]]
 }

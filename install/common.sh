@@ -10,6 +10,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/detect.sh"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
+NEOVIM_LINUX_VERSION="0.12.4"
+LAZYGIT_LINUX_VERSION="0.63.1"
+
 # Architecture mapping
 case "$OS_ARCH" in
     x86_64)
@@ -140,6 +143,200 @@ install_ripgrep() {
         sudo apt-get install -y ripgrep
     fi
     log_info "✓ ripgrep installed"
+}
+
+# Install Neovim
+install_neovim() {
+    local installed_version=""
+    if check_command nvim; then
+        installed_version="$(nvim_version || true)"
+        if version_at_least "$installed_version" "$NEOVIM_MIN_VERSION"; then
+            log_info "✓ Neovim ${installed_version} already installed"
+            return 0
+        fi
+    fi
+
+    log_info "Installing Neovim >= ${NEOVIM_MIN_VERSION}..."
+    if [ "$IS_MACOS" = "true" ]; then
+        if brew list --formula neovim > /dev/null 2>&1; then
+            brew upgrade neovim || return 1
+        else
+            brew install neovim || return 1
+        fi
+    else
+        local asset checksum install_dir stage_dir tmp_dir archive
+        case "$OS_ARCH" in
+            aarch64)
+                asset="nvim-linux-arm64.tar.gz"
+                checksum="ceb7e88c6b681f0515d135dcdfad54f5eb4373b25ce6172197cd9a69c758063f"
+                ;;
+            x86_64)
+                asset="nvim-linux-x86_64.tar.gz"
+                checksum="012bf3fcac5ade43914df3f174668bf64d05e049a4f032a388c027b1ebd78628"
+                ;;
+            *)
+                log_error "Unsupported architecture for Neovim: $OS_ARCH"
+                return 1
+                ;;
+        esac
+
+        install_dir="$HOME/.local/opt/nvim-${NEOVIM_LINUX_VERSION}"
+        if [ -x "$install_dir/bin/nvim" ]; then
+            mkdir -p "$HOME/.local/bin"
+            ln -sfn "$install_dir/bin/nvim" "$HOME/.local/bin/nvim"
+            export PATH="$HOME/.local/bin:$PATH"
+        else
+            tmp_dir="$(mktemp -d)" || return 1
+            archive="$tmp_dir/$asset"
+            stage_dir="$tmp_dir/nvim"
+            if ! curl -fL --retry 3 \
+                "https://github.com/neovim/neovim/releases/download/v${NEOVIM_LINUX_VERSION}/${asset}" \
+                -o "$archive"; then
+                rm -rf "$tmp_dir"
+                log_error "Failed to download Neovim ${NEOVIM_LINUX_VERSION}"
+                return 1
+            fi
+            if ! verify_sha256 "$checksum" "$archive"; then
+                rm -rf "$tmp_dir"
+                log_error "Neovim archive checksum verification failed"
+                return 1
+            fi
+            mkdir -p "$stage_dir"
+            if ! tar -xzf "$archive" --strip-components=1 -C "$stage_dir"; then
+                rm -rf "$tmp_dir"
+                log_error "Failed to extract Neovim ${NEOVIM_LINUX_VERSION}"
+                return 1
+            fi
+            if [ ! -x "$stage_dir/bin/nvim" ]; then
+                rm -rf "$tmp_dir"
+                log_error "Downloaded Neovim archive contains no executable"
+                return 1
+            fi
+
+            mkdir -p "$HOME/.local/opt" "$HOME/.local/bin"
+            rm -rf "${install_dir}.previous"
+            if [ -e "$install_dir" ]; then
+                mv "$install_dir" "${install_dir}.previous" || {
+                    rm -rf "$tmp_dir"
+                    return 1
+                }
+            fi
+            if ! mv "$stage_dir" "$install_dir"; then
+                [ -e "${install_dir}.previous" ] && mv "${install_dir}.previous" "$install_dir"
+                rm -rf "$tmp_dir"
+                return 1
+            fi
+            ln -sfn "$install_dir/bin/nvim" "$HOME/.local/bin/nvim"
+            rm -rf "${install_dir}.previous" "$tmp_dir"
+            export PATH="$HOME/.local/bin:$PATH"
+        fi
+    fi
+
+    installed_version="$(nvim_version || true)"
+    if ! version_at_least "$installed_version" "$NEOVIM_MIN_VERSION"; then
+        log_error "Installation requires Neovim >= ${NEOVIM_MIN_VERSION}; found ${installed_version:-none}"
+        return 1
+    fi
+    log_info "✓ Neovim ${installed_version} installed"
+}
+
+# Install fd
+install_fd() {
+    if check_command fd; then
+        log_info "✓ fd already installed"
+        return 0
+    fi
+
+    log_info "Installing fd..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install fd || return 1
+    else
+        sudo apt-get install -y fd-find || return 1
+        local fdfind_path target
+        fdfind_path="$(command -v fdfind || true)"
+        target="$HOME/.local/bin/fd"
+        if [ -z "$fdfind_path" ]; then
+            log_error "fd-find installed without an fdfind executable"
+            return 1
+        fi
+        mkdir -p "$HOME/.local/bin"
+        if [ -e "$target" ] || [ -L "$target" ]; then
+            if [ ! -L "$target" ] || [ "$(readlink "$target")" != "$fdfind_path" ]; then
+                log_error "Refusing to replace unrelated fd target: $target"
+                return 1
+            fi
+        else
+            ln -s "$fdfind_path" "$target"
+        fi
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+
+    check_command fd || {
+        log_error "fd installation did not provide an fd executable"
+        return 1
+    }
+    log_info "✓ fd installed"
+}
+
+# Install LazyGit
+install_lazygit() {
+    if check_command lazygit; then
+        log_info "✓ LazyGit already installed"
+        return 0
+    fi
+
+    log_info "Installing LazyGit..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install lazygit || return 1
+    else
+        local asset_arch checksum tmp_dir archive staged_binary
+        case "$OS_ARCH" in
+            aarch64)
+                asset_arch="arm64"
+                checksum="555dbc9a8efcf2e33bc24e7fbd9463e9fa375e3c5e23cc270763733c38eeae36"
+                ;;
+            x86_64)
+                asset_arch="x86_64"
+                checksum="8e033bc78c8e192dee9510e951f6c9e154289b7198d22c924ed1d0a951b0dac1"
+                ;;
+            *)
+                log_error "Unsupported architecture for LazyGit: $OS_ARCH"
+                return 1
+                ;;
+        esac
+
+        tmp_dir="$(mktemp -d)" || return 1
+        archive="$tmp_dir/lazygit.tar.gz"
+        staged_binary="$tmp_dir/lazygit"
+        if ! curl -fL --retry 3 \
+            "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_LINUX_VERSION}/lazygit_${LAZYGIT_LINUX_VERSION}_Linux_${asset_arch}.tar.gz" \
+            -o "$archive"; then
+            rm -rf "$tmp_dir"
+            log_error "Failed to download LazyGit ${LAZYGIT_LINUX_VERSION}"
+            return 1
+        fi
+        if ! verify_sha256 "$checksum" "$archive"; then
+            rm -rf "$tmp_dir"
+            log_error "LazyGit archive checksum verification failed"
+            return 1
+        fi
+        if ! tar -xzf "$archive" -C "$tmp_dir" lazygit || [ ! -f "$staged_binary" ]; then
+            rm -rf "$tmp_dir"
+            log_error "Failed to extract LazyGit ${LAZYGIT_LINUX_VERSION}"
+            return 1
+        fi
+        chmod 0755 "$staged_binary"
+        mkdir -p "$HOME/.local/bin"
+        mv "$staged_binary" "$HOME/.local/bin/lazygit"
+        rm -rf "$tmp_dir"
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+
+    check_command lazygit || {
+        log_error "LazyGit installation did not provide a lazygit executable"
+        return 1
+    }
+    log_info "✓ LazyGit installed"
 }
 
 # Install bat
@@ -434,6 +631,9 @@ install_common_tools() {
     install_jq || ((failed+=1))
     install_yq || ((failed+=1))
     install_ripgrep || ((failed+=1))
+    install_neovim || ((failed+=1))
+    install_fd || ((failed+=1))
+    install_lazygit || ((failed+=1))
     install_bat || ((failed+=1))
     install_btop || ((failed+=1))
     install_github_cli || ((failed+=1))

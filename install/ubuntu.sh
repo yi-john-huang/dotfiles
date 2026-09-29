@@ -51,6 +51,8 @@ install_system_packages() {
         fontconfig
         gnupg
         lsb-release
+        xclip
+        wl-clipboard
     )
     
     for pkg in "${packages[@]}"; do

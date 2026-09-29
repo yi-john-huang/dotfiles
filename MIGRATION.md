@@ -90,16 +90,23 @@ cd ~/.dotfiles
 ```
 
 The bootstrap will:
-- Backup existing configs to `.backup` files
-- Create symlinks to new configs
-- Install all tools
-- Verify installations
+- Preserve an unmanaged Neovim file, directory, symlink, or broken symlink as `${XDG_CONFIG_HOME:-$HOME/.config}/nvim.backup`.
+- Stop without changing either path if both `nvim` and `nvim.backup` already exist.
+- Link the tracked `config/nvim/` directory into the XDG config directory.
+- Set `EDITOR` and `VISUAL` to `nvim`; a later `~/.extra` can override them.
+- Install tools, start the LazyVim/Mason first-run bootstrap, and verify installations.
 
 ### 5. Verify Migration
 
 ```bash
 # Check installations
 ./verify.sh
+
+# Confirm the managed Neovim link
+test "$(readlink "${XDG_CONFIG_HOME:-$HOME/.config}/nvim")" = "$PWD/config/nvim"
+
+# Install locked plugins after the first bootstrap
+nvim --headless "+Lazy! sync" +qa
 
 # Test shell
 source ~/.bashrc  # or ~/.zshrc
@@ -189,25 +196,24 @@ git config --global user.email "your.email@example.com"
 
 ## Rollback
 
-If you need to rollback:
+The bootstrap preserves one Neovim rollback point. Remove only the managed link, then restore the backup:
 
 ```bash
-# Restore old configs
-mv ~/.bashrc.old ~/.bashrc
-mv ~/.zshrc.old ~/.zshrc
-mv ~/.gitconfig.old ~/.gitconfig
-mv ~/.config/nvim.old ~/.config/nvim
+nvim_target="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+test -L "$nvim_target"
+rm "$nvim_target"
+mv "${nvim_target}.backup" "$nvim_target"
+```
 
-# Remove symlinks
-rm ~/.bashrc ~/.zshrc ~/.gitconfig
-rm -rf ~/.config/nvim
+Restore shell or Git backups separately only when those files were migrated:
 
-# Restore from backups
+```bash
 mv ~/.bashrc.backup ~/.bashrc
 mv ~/.zshrc.backup ~/.zshrc
 mv ~/.gitconfig.backup ~/.gitconfig
-mv ~/.config/nvim.backup ~/.config/nvim
 ```
+
+Never delete `nvim.backup` to make bootstrap proceed without first inspecting and reconciling its contents.
 
 ## Troubleshooting
 
@@ -240,18 +246,21 @@ git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 
-### Neovim Plugins Not Loading
+### Neovim Plugins or Language Tools Not Loading
 
-**Problem**: Neovim plugins not working
+**Problem**: Neovim plugins, language servers, formatters, or debuggers are unavailable.
 
 **Solution**:
-```bash
-# Open Neovim and let lazy.nvim install plugins
-nvim
 
-# Or manually trigger
-nvim +Lazy
+```bash
+# Restore the tracked plugin state.
+nvim --headless "+Lazy! sync" +qa
+
+# Verify the workstation dependencies.
+./verify.sh
 ```
+
+Inside Neovim, inspect `:Lazy`, `:Mason`, `:LspInfo`, `:checkhealth lazyvim`, and `:checkhealth`. The first LazyVim and Mason bootstrap requires network access. Retry the failing manager after connectivity returns; do not replace the tracked config with the deprecated one.
 
 ## Getting Help
 
