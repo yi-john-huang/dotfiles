@@ -9,6 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/utils.sh"
 source "${SCRIPT_DIR}/lib/detect.sh"
 
+NEOVIM_MIN_VERSION="0.11.2"
+JAVA_MIN_VERSION="21.0.0"
+
 # Load tool paths without sourcing interactive shell configs.
 if [ -d "/opt/homebrew" ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -32,8 +35,8 @@ if [ -n "${NVM_DIR:-}" ]; then
     set -u
 fi
 
-if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
-    export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
+if [ -d "/opt/homebrew/opt/openjdk@21" ]; then
+    export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"
 fi
 
 # Track results
@@ -107,6 +110,44 @@ check_tool() {
     fi
 }
 
+check_neovim() {
+    local first_line=""
+    local version=""
+
+    if check_command nvim; then
+        first_line="$(nvim --version 2>&1 | sed -n '1p')"
+        version="$(printf '%s\n' "$first_line" | sed -n 's/^NVIM v\([^ ]*\).*/\1/p')"
+    fi
+
+    if version_at_least "$version" "$NEOVIM_MIN_VERSION"; then
+        log_info "✓ Neovim: $first_line"
+        ((PASSED+=1))
+    else
+        log_error "✗ Neovim >= ${NEOVIM_MIN_VERSION}: ${first_line:-not found}"
+        FAILED_TOOLS+=("Neovim >= 0.11.2")
+        ((FAILED+=1))
+    fi
+}
+
+check_java() {
+    local first_line=""
+    local version=""
+
+    if check_command java; then
+        first_line="$(java -version 2>&1 | sed -n '1p')"
+        version="$(printf '%s\n' "$first_line" | sed -n 's/.*version "\([^"]*\)".*/\1/p')"
+    fi
+
+    if version_at_least "$version" "$JAVA_MIN_VERSION"; then
+        log_info "✓ Java: $first_line"
+        ((PASSED+=1))
+    else
+        log_error "✗ Java >= 21: ${first_line:-not found}"
+        FAILED_TOOLS+=("Java >= 21")
+        ((FAILED+=1))
+    fi
+}
+
 check_optional_tool() {
     local tool=$1
     local display_name=${2:-$tool}
@@ -169,6 +210,9 @@ verify_all() {
     check_tool jq "jq"
     check_tool yq "yq"
     check_tool rg "ripgrep"
+    check_neovim
+    check_tool fd "fd"
+    check_tool lazygit "LazyGit"
     if check_command bat; then
         check_tool bat "bat"
     elif check_command batcat; then
@@ -193,8 +237,13 @@ verify_all() {
     check_tool aws "AWS CLI"
     
     if [ "$IS_MACOS" = "true" ]; then
-        if podman compose version &>/dev/null; then
-            local compose_version=$(podman compose version 2>&1 | head -n1)
+        local compose_version=""
+        if podman compose version &> /dev/null; then
+            compose_version="$(podman compose version 2>&1 | sed -n '1p')"
+        elif check_command podman-compose; then
+            compose_version="$(podman-compose --version 2>&1 | sed -n '1p')"
+        fi
+        if [ -n "$compose_version" ]; then
             log_info "✓ Podman compose: $compose_version"
             ((PASSED+=1))
         else
@@ -220,7 +269,8 @@ verify_all() {
     check_tool npm "npm"
     check_tool uv "uv"
     check_tool go "Go"
-    check_tool java "Java"
+    check_tool tree-sitter "tree-sitter CLI"
+    check_java
 
     # Optional local AI CLIs
     check_optional_tool lms "LM Studio CLI"

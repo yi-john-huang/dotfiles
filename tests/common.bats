@@ -27,6 +27,78 @@ setup() {
     declare -f install_ripgrep > /dev/null
 }
 
+@test "install_neovim function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_neovim > /dev/null
+}
+
+@test "install_fd function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_fd > /dev/null
+}
+
+@test "install_lazygit function exists" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    declare -f install_lazygit > /dev/null
+}
+
+@test "install_neovim skips a supported version" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    nvim() { printf 'NVIM v0.12.4\n'; }
+    brew() { printf 'brew must not run\n' >&2; return 99; }
+
+    run install_neovim
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"already installed"* ]]
+    [[ "$output" != *"brew must not run"* ]]
+}
+
+@test "install_neovim upgrades an old Homebrew formula" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    IS_MACOS="true"
+    nvim() { printf 'NVIM v0.10.4\n'; }
+    brew() {
+        if [ "$1" = "list" ]; then
+            return 0
+        fi
+        printf 'brew %s %s\n' "$1" "$2"
+    }
+
+    run install_neovim
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"brew upgrade neovim"* ]]
+    [[ "$output" == *"requires Neovim"* ]]
+}
+
+@test "install_neovim checksum failure leaves no Linux installation" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    IS_MACOS="false"
+    OS_ARCH="aarch64"
+    HOME="$BATS_TEST_TMPDIR/home"
+    mkdir -p "$HOME"
+    nvim() { printf 'NVIM v0.10.4\n'; }
+    curl() {
+        local output
+        while [ "$#" -gt 0 ]; do
+            if [ "$1" = "-o" ]; then
+                output="$2"
+                break
+            fi
+            shift
+        done
+        printf 'corrupt archive\n' > "$output"
+    }
+    shasum() { return 1; }
+
+    run install_neovim
+
+    [ "$status" -ne 0 ]
+    [ ! -e "$HOME/.local/opt/nvim-${NEOVIM_LINUX_VERSION}" ]
+    [ ! -L "$HOME/.local/bin/nvim" ]
+}
+
 @test "install_bat function exists" {
     source "${BATS_TEST_DIRNAME}/../install/common.sh"
     declare -f install_bat > /dev/null

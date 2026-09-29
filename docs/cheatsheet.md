@@ -211,106 +211,81 @@ config/zellij/config.kdl
 | `Alt+[` | Previous tab |
 | `Alt+]` | Next tab |
 
-## Vim
+## Neovim
 
-The active bootstrap does not currently deploy a Vim config, but the deprecated Vim config uses:
-
-```vim
-let mapleader=","
-```
-
-So custom mappings use comma as the leader key.
+The active LazyVim configuration is deployed at `${XDG_CONFIG_HOME:-$HOME/.config}/nvim`. Press `Space` and pause for WhichKey discovery. See [Neovim Daily IDE Guide](neovim.md) for a progressive workflow.
 
 ### Modes
 
 | Key | Action |
 | --- | --- |
-| `i` | Insert before cursor |
-| `a` | Insert after cursor |
-| `o` | Open line below |
-| `O` | Open line above |
-| `Esc` | Return to normal mode |
-| `v` | Visual character mode |
-| `V` | Visual line mode |
-| `Ctrl+v` | Visual block mode |
+| `i` / `a` | Insert before / after cursor |
+| `o` / `O` | Open a line below / above |
+| `Esc` | Return to Normal mode |
+| `v` / `V` / `Ctrl+v` | Character / line / block Visual mode |
 | `:` | Command-line mode |
 
-### Movement
+### Movement and Editing
 
 | Key | Action |
 | --- | --- |
 | `h` `j` `k` `l` | Left, down, up, right |
-| `w` | Next word |
-| `b` | Previous word |
-| `e` | End of word |
-| `0` | Start of line |
-| `^` | First non-blank character |
-| `$` | End of line |
-| `gg` | Top of file |
-| `G` | Bottom of file |
-| `{` `}` | Previous/next paragraph |
-| `Ctrl+d` | Half-page down |
-| `Ctrl+u` | Half-page up |
+| `w` / `b` / `e` | Next word / previous word / end of word |
+| `0` / `^` / `$` | Line start / first non-blank / line end |
+| `gg` / `G` | Top / bottom of file |
+| `Ctrl+d` / `Ctrl+u` | Half-page down / up |
+| `dd` / `yy` | Delete / yank line |
+| `p` / `P` | Paste after / before cursor |
+| `u` / `Ctrl+r` | Undo / redo |
+| `.` | Repeat the last change |
+| `ciw` / `diw` / `yiw` | Change / delete / yank inner word |
+| `ci\"` / `di(` | Change inside quotes / delete inside parentheses |
 
-### Editing
+### Search, Files, and Buffers
 
-| Key | Action |
+| Key or command | Action |
 | --- | --- |
-| `x` | Delete character |
-| `dd` | Delete line |
-| `yy` | Yank line |
-| `p` | Paste after cursor |
-| `P` | Paste before cursor |
-| `u` | Undo |
-| `Ctrl+r` | Redo |
-| `.` | Repeat last change |
-| `ciw` | Change inner word |
-| `diw` | Delete inner word |
-| `yiw` | Yank inner word |
-| `ci"` | Change inside double quotes |
-| `di(` | Delete inside parentheses |
-
-### Search And Replace
-
-| Command | Action |
-| --- | --- |
-| `/text` | Search forward |
-| `?text` | Search backward |
-| `n` | Next match |
-| `N` | Previous match |
-| `:%s/old/new/g` | Replace all matches in file |
-| `:%s/old/new/gc` | Replace all matches with confirmation |
-| `:noh` | Clear search highlight |
-
-### Files And Buffers
-
-| Command | Action |
-| --- | --- |
-| `:w` | Save |
-| `:q` | Quit |
-| `:wq` | Save and quit |
-| `:q!` | Quit without saving |
-| `:e path` | Edit file |
-| `:bn` | Next buffer |
-| `:bp` | Previous buffer |
-| `:bd` | Delete buffer |
+| `/text` / `?text` | Search forward / backward |
+| `n` / `N` | Next / previous match |
+| `:%s/old/new/gc` | Replace in file with confirmation |
+| `<leader><space>` / `<leader>ff` | Find files |
+| `<leader>/` | Search project text |
+| `<leader>e` | Toggle explorer |
+| `Shift+h` / `Shift+l` | Previous / next buffer |
+| `<leader>bd` | Delete buffer |
+| `:w` / `:q` / `:wq` | Save / quit / save and quit |
 
 ### Windows
 
-| Key/Command | Action |
+| Key or command | Action |
 | --- | --- |
-| `:split` | Horizontal split |
-| `:vsplit` | Vertical split |
-| `Ctrl+w h` | Focus window left |
-| `Ctrl+w j` | Focus window down |
-| `Ctrl+w k` | Focus window up |
-| `Ctrl+w l` | Focus window right |
-| `Ctrl+w =` | Equalize windows |
-| `Ctrl+w q` | Close window |
+| `:split` / `:vsplit` | Horizontal / vertical split |
+| `Ctrl+h/j/k/l` | Focus the adjacent **Neovim window** |
+| `Ctrl+w =` | Equalize Neovim windows |
+| `Ctrl+w q` | Close the current Neovim window |
 
-### Deprecated Repo Mappings
+tmux and Zellij panes are outside Neovim. Use their pane bindings rather than `Ctrl+h/j/k/l` when focus is in another terminal pane.
+
+### LSP, Diagnostics, and Formatting
 
 | Key | Action |
 | --- | --- |
-| `,ss` | Strip trailing whitespace |
-| `,W` | Save current file through `sudo tee` |
+| `gd` | Go to definition |
+| `gr` | Find references |
+| `K` | Hover documentation |
+| `<leader>ca` | Code action |
+| `<leader>cr` | Rename symbol |
+| `<leader>cf` | Format |
+| `[d` / `]d` | Previous / next diagnostic |
+| `<leader>xx` | Diagnostics panel |
+
+### Git, Terminal, and Debugging
+
+| Key | Action |
+| --- | --- |
+| `<leader>gg` | Open LazyGit |
+| `<C-/>` | Toggle integrated terminal |
+| `<leader>db` | Toggle breakpoint |
+| `<leader>dc` | Start or continue debugging |
+| `<leader>dO` | Step over |
+| `<leader>di` | Step into |

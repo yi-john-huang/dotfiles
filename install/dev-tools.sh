@@ -10,6 +10,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/detect.sh"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
+JAVA_MIN_VERSION="21.0.0"
+
 # Install nvm (Node Version Manager)
 get_nvm_dir() {
     if [ -n "${NVM_DIR:-}" ]; then
@@ -58,6 +60,31 @@ install_nvm() {
     set -u
 
     log_info "✓ nvm and Node.js installed"
+}
+
+# Install tree-sitter CLI
+install_tree_sitter_cli() {
+    if check_command tree-sitter && tree-sitter --version > /dev/null 2>&1; then
+        log_info "✓ tree-sitter CLI already installed"
+        return 0
+    fi
+
+    log_info "Installing tree-sitter CLI..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install tree-sitter-cli || return 1
+    else
+        if ! check_command npm; then
+            log_error "npm is required to install tree-sitter CLI"
+            return 1
+        fi
+        npm install --global tree-sitter-cli || return 1
+    fi
+
+    if ! check_command tree-sitter || ! tree-sitter --version > /dev/null 2>&1; then
+        log_error "tree-sitter CLI installation did not provide a working executable"
+        return 1
+    fi
+    log_info "✓ tree-sitter CLI installed"
 }
 
 # Install uv (Python package manager)
@@ -109,20 +136,68 @@ install_go() {
 
 # Install Java (OpenJDK)
 install_java() {
+    local installed_version="" java_prefix="" java_jdk_link=""
     if check_command java; then
-        log_info "✓ Java already installed"
-        return 0
+        installed_version="$(java -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p' || true)"
+        if version_at_least "$installed_version" "$JAVA_MIN_VERSION"; then
+            log_info "✓ Java ${installed_version} already installed"
+            return 0
+        fi
     fi
-    
-    log_info "Installing Java..."
     if [ "$IS_MACOS" = "true" ]; then
-        brew install openjdk@17
-        # Link Java for system
-        sudo ln -sfn "$(brew --prefix)/opt/openjdk@17/libexec/openjdk.jdk" /Library/Java/JavaVirtualMachines/openjdk-17.jdk
-    else
-        sudo apt-get install -y openjdk-17-jdk
+        java_prefix="$(brew --prefix openjdk@21 2>/dev/null || true)"
+        if [ -x "$java_prefix/bin/java" ]; then
+            installed_version="$("$java_prefix/bin/java" -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p' || true)"
+            if version_at_least "$installed_version" "$JAVA_MIN_VERSION"; then
+                export JAVA_HOME="$java_prefix/libexec/openjdk.jdk/Contents/Home"
+                export PATH="$JAVA_HOME/bin:$PATH"
+                log_info "✓ Java ${installed_version} already installed"
+                return 0
+            fi
+        fi
     fi
-    log_info "✓ Java installed"
+
+
+    log_info "Installing Java >= ${JAVA_MIN_VERSION}..."
+    if [ "$IS_MACOS" = "true" ]; then
+        brew install openjdk@21 || return 1
+        java_prefix="$(brew --prefix openjdk@21)" || return 1
+        java_jdk_link="/Library/Java/JavaVirtualMachines/openjdk-21.jdk"
+        if [ ! -L "$java_jdk_link" ] || [ "$(readlink "$java_jdk_link")" != "$java_prefix/libexec/openjdk.jdk" ]; then
+            if ! sudo -n ln -sfn "$java_prefix/libexec/openjdk.jdk" "$java_jdk_link"; then
+                log_warn "Could not create $java_jdk_link without sudo; using the Homebrew Java path"
+            fi
+        fi
+        export JAVA_HOME="$java_prefix/libexec/openjdk.jdk/Contents/Home"
+        export PATH="$JAVA_HOME/bin:$PATH"
+    else
+        sudo apt-get install -y openjdk-21-jdk || return 1
+        local java_arch java_home
+        case "$OS_ARCH" in
+            aarch64) java_arch="arm64" ;;
+            x86_64) java_arch="amd64" ;;
+            *)
+                log_error "Unsupported architecture for Java: $OS_ARCH"
+                return 1
+                ;;
+        esac
+        java_home="/usr/lib/jvm/java-21-openjdk-${java_arch}"
+        if [ ! -x "$java_home/bin/java" ] || [ ! -x "$java_home/bin/javac" ]; then
+            log_error "OpenJDK 21 executables not found under $java_home"
+            return 1
+        fi
+        sudo update-alternatives --set java "$java_home/bin/java" || return 1
+        sudo update-alternatives --set javac "$java_home/bin/javac" || return 1
+        export JAVA_HOME="$java_home"
+        export PATH="$JAVA_HOME/bin:$PATH"
+    fi
+
+    installed_version="$(java -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p' || true)"
+    if ! version_at_least "$installed_version" "$JAVA_MIN_VERSION"; then
+        log_error "Installation requires Java 21 or newer; found ${installed_version:-none}"
+        return 1
+    fi
+    log_info "✓ Java ${installed_version} installed"
 }
 
 # Main installation function
@@ -130,6 +205,7 @@ install_dev_tools() {
     log_info "Starting development tools installation..."
     
     install_nvm
+    install_tree_sitter_cli
     install_uv
     install_go
     install_java

@@ -19,8 +19,8 @@ setup() {
     [[ "$OS_TYPE" == "Darwin" || "$OS_TYPE" == "Linux" ]]
 }
 
-@test "OS_ARCH is either arm64 or x86_64" {
-    [[ "$OS_ARCH" == "arm64" || "$OS_ARCH" == "x86_64" ]]
+@test "OS_ARCH is either aarch64 or x86_64" {
+    [[ "$OS_ARCH" == "aarch64" || "$OS_ARCH" == "x86_64" ]]
 }
 
 @test "IS_MACOS is set when on macOS" {

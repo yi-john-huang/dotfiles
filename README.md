@@ -20,128 +20,37 @@ cd ~/.dotfiles
 
 ## What Gets Installed
 
-### Platform-Specific Tools
+### Platform-specific tools
 
-**macOS:**
+- **macOS:** Homebrew, iTerm2, Alacritty, and Podman.
+- **Ubuntu:** build-essential, Alacritty, and system packages including X11 (`xclip`) and Wayland (`wl-clipboard`) clipboard providers.
 
-- Homebrew (package manager)
-- iTerm2 (terminal)
-- Alacritty (terminal)
-- Podman (container runtime)
+### Common CLI tools
 
-**Ubuntu:**
+- jq and yq for structured data.
+- ripgrep, fd, and bat for fast search and file inspection.
+- Neovim 0.11.2 or newer with the tracked LazyVim configuration.
+- LazyGit, GitHub CLI, and GitLab CLI.
+- tmux and Zellij.
+- kubectl, kubectx, k9s, Helm, Terraform, and AWS CLI.
+- JetBrainsMono Nerd Font.
 
-- build-essential
-- System packages (curl, wget, git, etc.)
-- Alacritty (terminal)
+### Development tools
 
-### Common CLI Tools
-
-- jq, yq (JSON/YAML processors)
-- JetBrainsMono Nerd Font (terminal font)
-- ripgrep, bat (modern grep/cat)
-- gh, glab (GitHub/GitLab CLIs)
-- tmux and Zellij (terminal multiplexers)
-- kubectl, kubectx, k9s (Kubernetes tools)
-- Terraform (infrastructure as code)
-
-### Development Tools
-
-- **Node.js/TypeScript**: nvm + latest LTS
-- **Python**: uv package manager
-- **Go**: Latest stable
-- **Java**: OpenJDK 17
+- **Node.js/TypeScript:** nvm and the latest LTS release.
+- **Python:** uv.
+- **Go:** latest stable release.
+- **Java:** OpenJDK 21, required by the Java language server.
+- **Syntax tooling:** tree-sitter CLI.
 
 ### Configurations
 
-- **Shell**: .bashrc, .zshrc, and .zimrc with Zim, aliases, AI CLI shortcuts, and PATH
-- **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
-- **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
-- **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
-- **Alacritty**: cross-platform XDG config at `~/.config/alacritty/alacritty.toml`
-
-## Usage
-
-### Basic Installation
-
-### Platform-Specific Tools
-
-**macOS:**
-
-- Homebrew (package manager)
-- iTerm2 (terminal)
-- Alacritty (terminal)
-- Podman (container runtime)
-
-**Ubuntu:**
-
-- build-essential
-- System packages (curl, wget, git, zsh, etc.)
-- Alacritty (terminal)
-
-### Common CLI Tools
-
-- jq, yq (JSON/YAML processors)
-- JetBrainsMono Nerd Font (terminal font)
-- ripgrep, bat (modern grep/cat)
-- gh, glab (GitHub/GitLab CLIs)
-- tmux and Zellij (terminal multiplexers)
-- kubectl, kubectx, k9s (Kubernetes tools)
-- Terraform (infrastructure as code)
-
-### Development Tools
-
-- **Node.js/TypeScript**: nvm + latest LTS
-- **Python**: uv package manager
-- **Go**: Latest stable
-- **Java**: OpenJDK 17
-
-### Configurations
-
-- **Shell**: .bashrc, .zshrc, and .zimrc with Zim, aliases, AI CLI shortcuts, and PATH
-- **Git**: .gitconfig (included via `~/.gitconfig`) with aliases and .gitignore_global
-- **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
-- **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
-- **Alacritty**: cross-platform XDG config at `~/.config/alacritty/alacritty.toml`
-
-## Usage
-
-### Basic Installation
-
-### Platform-Specific Tools
-
-**macOS:**
-- Homebrew (package manager)
-- iTerm2 (terminal)
-- Alacritty (terminal)
-- Podman (container runtime)
-
-**Ubuntu:**
-- build-essential
-- System packages (curl, wget, git, zsh, etc.)
-- Alacritty (terminal)
-
-### Common CLI Tools
-- jq, yq (JSON/YAML processors)
-- JetBrainsMono Nerd Font (terminal font)
-- ripgrep, bat (modern grep/cat)
-- gh, glab (GitHub/GitLab CLIs)
-- tmux and Zellij (terminal multiplexers)
-- kubectl, kubectx, k9s (Kubernetes tools)
-- Terraform (infrastructure as code)
-
-### Development Tools
-- **Node.js/TypeScript**: nvm + latest LTS
-- **Python**: uv package manager
-- **Go**: Latest stable
-- **Java**: OpenJDK 17
-
-### Configurations
-- **Shell**: .bashrc, .zshrc, and .zimrc with Zim, aliases, AI CLI shortcuts, and PATH
-- **Git**: .gitconfig with aliases and .gitignore_global
-- **tmux**: .tmux.conf with mouse support, vi copy mode, ergonomic panes, and status line
-- **Zellij**: XDG config at `~/.config/zellij/config.kdl` with bottom shortcut hints, mouse support, persisted sessions, and Alt-key pane navigation
-- **Alacritty**: cross-platform XDG config at `~/.config/alacritty/alacritty.toml`
+- **Neovim:** `config/nvim/` is linked as `${XDG_CONFIG_HOME:-$HOME/.config}/nvim`; LazyVim provides LSP, completion, formatting, debugging, Git, search, explorer, terminal, and session workflows.
+- **Shell:** `.bashrc`, `.zshrc`, and `.zimrc` with Zim, aliases, editor defaults, and PATH setup.
+- **Git:** `.gitconfig` included through `~/.gitconfig`, plus `.gitignore_global`.
+- **tmux:** mouse support, vi copy mode, panes, and status line.
+- **Zellij:** XDG configuration with shortcut hints, mouse support, sessions, and pane navigation.
+- **Alacritty:** cross-platform XDG configuration.
 
 ## x86_64 Container Testing
 
@@ -179,32 +88,25 @@ PODMAN_CPU=4 PODMAN_MEM=8 PODMAN_DISK=20 ./scripts/x86-start.sh
 
 ## Usage
 
-### Cheat Sheet
+### Daily editing
 
-See [docs/cheatsheet.md](docs/cheatsheet.md) for Alacritty, tmux, Zellij, and Vim shortcuts.
+```bash
+cd path/to/project
+nvim .
+```
 
-### Basic Installation
+On first launch, lazy.nvim downloads the locked plugins and Mason downloads configured language servers, formatters, linters, and debug adapters. Network access is required. Press `Space` to discover commands through WhichKey.
+
+Start with the [Neovim migration guide](docs/neovim.md), then keep the [terminal cheat sheet](docs/cheatsheet.md) nearby.
+
+### Bootstrap and verification
+
 ```bash
 ./bootstrap.sh
-```
-
-### Force Reinstall
-
-```bash
-./bootstrap.sh --force
-```
-
-### Skip Verification
-
-```bash
-./bootstrap.sh --skip-verify
-```
-
-### Verify Installation
-
-```bash
 ./verify.sh
 ```
+
+Use `./bootstrap.sh --skip-verify` when verification must be deferred. `--force` remains available for platform installers that support a forced reinstall.
 
 ## Architecture
 
@@ -225,6 +127,7 @@ See [docs/cheatsheet.md](docs/cheatsheet.md) for Alacritty, tmux, Zellij, and Vi
 │   ├── git/          # Git config
 │   ├── tmux/         # tmux config
 │   ├── zellij/       # Zellij config
+│   ├── nvim/         # LazyVim configuration and plugin lockfile
 │   └── alacritty/    # Alacritty config
 ├── tests/            # Test files (bats)
 └── deprecated/       # Old dotfiles (reference only)

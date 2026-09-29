@@ -42,9 +42,13 @@ export PATH="$PATH:/usr/local/go/bin:$GOPATH/bin"
 export PATH="$HOME/.tfenv/bin:$PATH"
 
 # Java
-if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
-    export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
+if [ -d "/opt/homebrew/opt/openjdk@21" ]; then
+    export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"
 fi
+
+# Editor
+export EDITOR="nvim"
+export VISUAL="$EDITOR"
 
 # Aliases
 alias ll='ls -lah'
