@@ -10,7 +10,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/detect.sh"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
-NEOVIM_MIN_VERSION="0.11.2"
 NEOVIM_LINUX_VERSION="0.12.4"
 LAZYGIT_LINUX_VERSION="0.63.1"
 
@@ -150,7 +149,7 @@ install_ripgrep() {
 install_neovim() {
     local installed_version=""
     if check_command nvim; then
-        installed_version="$(nvim --version 2>/dev/null | sed -n '1s/^NVIM v\([^ ]*\).*/\1/p' || true)"
+        installed_version="$(nvim_version || true)"
         if version_at_least "$installed_version" "$NEOVIM_MIN_VERSION"; then
             log_info "✓ Neovim ${installed_version} already installed"
             return 0
@@ -197,7 +196,7 @@ install_neovim() {
                 log_error "Failed to download Neovim ${NEOVIM_LINUX_VERSION}"
                 return 1
             fi
-            if ! printf '%s  %s\n' "$checksum" "$archive" | shasum -a 256 -c - > /dev/null 2>&1; then
+            if ! verify_sha256 "$checksum" "$archive"; then
                 rm -rf "$tmp_dir"
                 log_error "Neovim archive checksum verification failed"
                 return 1
@@ -233,7 +232,7 @@ install_neovim() {
         fi
     fi
 
-    installed_version="$(nvim --version 2>/dev/null | sed -n '1s/^NVIM v\([^ ]*\).*/\1/p' || true)"
+    installed_version="$(nvim_version || true)"
     if ! version_at_least "$installed_version" "$NEOVIM_MIN_VERSION"; then
         log_error "Installation requires Neovim >= ${NEOVIM_MIN_VERSION}; found ${installed_version:-none}"
         return 1
@@ -316,7 +315,7 @@ install_lazygit() {
             log_error "Failed to download LazyGit ${LAZYGIT_LINUX_VERSION}"
             return 1
         fi
-        if ! printf '%s  %s\n' "$checksum" "$archive" | shasum -a 256 -c - > /dev/null 2>&1; then
+        if ! verify_sha256 "$checksum" "$archive"; then
             rm -rf "$tmp_dir"
             log_error "LazyGit archive checksum verification failed"
             return 1

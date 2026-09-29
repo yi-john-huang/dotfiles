@@ -90,13 +90,57 @@ setup() {
         done
         printf 'corrupt archive\n' > "$output"
     }
-    shasum() { return 1; }
+    verify_sha256() { return 1; }
 
     run install_neovim
 
     [ "$status" -ne 0 ]
     [ ! -e "$HOME/.local/opt/nvim-${NEOVIM_LINUX_VERSION}" ]
     [ ! -L "$HOME/.local/bin/nvim" ]
+}
+
+@test "install_lazygit checksum failure installs nothing" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    IS_MACOS="false"
+    OS_ARCH="x86_64"
+    HOME="$BATS_TEST_TMPDIR/home"
+    mkdir -p "$HOME"
+    check_command() { return 1; }
+    curl() {
+        local output
+        while [ "$#" -gt 0 ]; do
+            if [ "$1" = "-o" ]; then
+                output="$2"
+                break
+            fi
+            shift
+        done
+        printf 'corrupt archive\n' > "$output"
+    }
+    verify_sha256() { return 1; }
+
+    run install_lazygit
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"checksum verification failed"* ]]
+    [ ! -e "$HOME/.local/bin/lazygit" ]
+}
+
+@test "install_fd refuses to replace an unrelated fd target on Linux" {
+    source "${BATS_TEST_DIRNAME}/../install/common.sh"
+    IS_MACOS="false"
+    HOME="$BATS_TEST_TMPDIR/home"
+    mkdir -p "$HOME/.local/bin"
+    printf 'user script\n' > "$HOME/.local/bin/fd"
+    check_command() { return 1; }
+    sudo() { return 0; }
+    command() { [ "$1" = "-v" ] && printf '/usr/bin/fdfind\n'; }
+
+    run install_fd
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Refusing to replace"* ]]
+    [ "$(cat "$HOME/.local/bin/fd")" = "user script" ]
 }
 
 @test "install_bat function exists" {

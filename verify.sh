@@ -9,9 +9,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/utils.sh"
 source "${SCRIPT_DIR}/lib/detect.sh"
 
-NEOVIM_MIN_VERSION="0.11.2"
-JAVA_MIN_VERSION="21.0.0"
-
 # Load tool paths without sourcing interactive shell configs.
 if [ -d "/opt/homebrew" ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -116,7 +113,7 @@ check_neovim() {
 
     if check_command nvim; then
         first_line="$(nvim --version 2>&1 | sed -n '1p')"
-        version="$(printf '%s\n' "$first_line" | sed -n 's/^NVIM v\([^ ]*\).*/\1/p')"
+        version="$(nvim_version)"
     fi
 
     if version_at_least "$version" "$NEOVIM_MIN_VERSION"; then
@@ -124,7 +121,7 @@ check_neovim() {
         ((PASSED+=1))
     else
         log_error "✗ Neovim >= ${NEOVIM_MIN_VERSION}: ${first_line:-not found}"
-        FAILED_TOOLS+=("Neovim >= 0.11.2")
+        FAILED_TOOLS+=("Neovim >= ${NEOVIM_MIN_VERSION}")
         ((FAILED+=1))
     fi
 }
@@ -135,15 +132,15 @@ check_java() {
 
     if check_command java; then
         first_line="$(java -version 2>&1 | sed -n '1p')"
-        version="$(printf '%s\n' "$first_line" | sed -n 's/.*version "\([^"]*\)".*/\1/p')"
+        version="$(java_version)"
     fi
 
     if version_at_least "$version" "$JAVA_MIN_VERSION"; then
         log_info "✓ Java: $first_line"
         ((PASSED+=1))
     else
-        log_error "✗ Java >= 21: ${first_line:-not found}"
-        FAILED_TOOLS+=("Java >= 21")
+        log_error "✗ Java >= ${JAVA_MIN_VERSION}: ${first_line:-not found}"
+        FAILED_TOOLS+=("Java >= ${JAVA_MIN_VERSION}")
         ((FAILED+=1))
     fi
 }

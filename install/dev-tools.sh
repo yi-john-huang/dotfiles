@@ -10,8 +10,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/detect.sh"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
-JAVA_MIN_VERSION="21.0.0"
-
 # Install nvm (Node Version Manager)
 get_nvm_dir() {
     if [ -n "${NVM_DIR:-}" ]; then
@@ -138,7 +136,7 @@ install_go() {
 install_java() {
     local installed_version="" java_prefix="" java_jdk_link=""
     if check_command java; then
-        installed_version="$(java -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p' || true)"
+        installed_version="$(java_version || true)"
         if version_at_least "$installed_version" "$JAVA_MIN_VERSION"; then
             log_info "✓ Java ${installed_version} already installed"
             return 0
@@ -147,7 +145,7 @@ install_java() {
     if [ "$IS_MACOS" = "true" ]; then
         java_prefix="$(brew --prefix openjdk@21 2>/dev/null || true)"
         if [ -x "$java_prefix/bin/java" ]; then
-            installed_version="$("$java_prefix/bin/java" -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p' || true)"
+            installed_version="$(java_version "$java_prefix/bin/java" || true)"
             if version_at_least "$installed_version" "$JAVA_MIN_VERSION"; then
                 export JAVA_HOME="$java_prefix/libexec/openjdk.jdk/Contents/Home"
                 export PATH="$JAVA_HOME/bin:$PATH"
@@ -156,7 +154,6 @@ install_java() {
             fi
         fi
     fi
-
 
     log_info "Installing Java >= ${JAVA_MIN_VERSION}..."
     if [ "$IS_MACOS" = "true" ]; then
@@ -192,7 +189,7 @@ install_java() {
         export PATH="$JAVA_HOME/bin:$PATH"
     fi
 
-    installed_version="$(java -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p' || true)"
+    installed_version="$(java_version || true)"
     if ! version_at_least "$installed_version" "$JAVA_MIN_VERSION"; then
         log_error "Installation requires Java 21 or newer; found ${installed_version:-none}"
         return 1
@@ -203,12 +200,18 @@ install_java() {
 # Main installation function
 install_dev_tools() {
     log_info "Starting development tools installation..."
-    
-    install_nvm
-    install_tree_sitter_cli
-    install_uv
-    install_go
-    install_java
-    
-    log_info "✓ Development tools installation complete"
+
+    local failed=0
+
+    install_nvm || ((failed+=1))
+    install_tree_sitter_cli || ((failed+=1))
+    install_uv || ((failed+=1))
+    install_go || ((failed+=1))
+    install_java || ((failed+=1))
+
+    if [ $failed -eq 0 ]; then
+        log_info "✓ Development tools installation complete"
+    else
+        log_warn "Development tools installation complete with $failed failures"
+    fi
 }

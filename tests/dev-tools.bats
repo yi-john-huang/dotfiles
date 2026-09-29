@@ -42,6 +42,40 @@ setup() {
     [[ "$output" == *"requires Java 21"* ]]
 }
 
+@test "install_dev_tools continues and reports when a step fails under errexit" {
+    run bash -c '
+        set -e
+        source "$1"
+        install_nvm() { return 0; }
+        install_tree_sitter_cli() { return 1; }
+        install_uv() { echo "uv ran"; }
+        install_go() { echo "go ran"; }
+        install_java() { return 1; }
+        install_dev_tools
+    ' _ "${BATS_TEST_DIRNAME}/../install/dev-tools.sh"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"uv ran"* ]]
+    [[ "$output" == *"go ran"* ]]
+    [[ "$output" == *"with 2 failures"* ]]
+}
+
+@test "install_java fails on Linux when OpenJDK 21 is missing" {
+    [ ! -e /usr/lib/jvm/java-21-openjdk-amd64/bin/java ] || skip "host has OpenJDK 21 installed"
+    source "${BATS_TEST_DIRNAME}/../install/dev-tools.sh"
+    IS_MACOS="false"
+    OS_ARCH="x86_64"
+    SUDO_LOG="$BATS_TEST_TMPDIR/sudo.log"
+    check_command() { return 1; }
+    sudo() { echo "$*" >> "$SUDO_LOG"; }
+
+    run install_java
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"OpenJDK 21 executables not found"* ]]
+    [ "$(cat "$SUDO_LOG")" = "apt-get install -y openjdk-21-jdk" ]
+}
+
 @test "install_uv function exists" {
     source "${BATS_TEST_DIRNAME}/../install/dev-tools.sh"
     declare -f install_uv > /dev/null

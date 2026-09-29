@@ -69,6 +69,32 @@ version_at_least() {
     ((10#$actual_patch >= 10#$required_patch))
 }
 
+NEOVIM_MIN_VERSION="0.11.2"
+JAVA_MIN_VERSION="21.0.0"
+
+# Print the version of a Neovim (or Java) executable, or nothing if unavailable.
+# Optional first argument overrides the executable path.
+nvim_version() {
+    "${1:-nvim}" --version 2>/dev/null | sed -n '1s/^NVIM v\([^ ]*\).*/\1/p'
+}
+
+java_version() {
+    "${1:-java}" -version 2>&1 | sed -n '1s/.*version "\([^"]*\)".*/\1/p'
+}
+
+# Verify a file against a SHA256 checksum using whichever tool is available.
+verify_sha256() {
+    local checksum="$1" file="$2"
+    if check_command sha256sum; then
+        printf '%s  %s\n' "$checksum" "$file" | sha256sum -c - > /dev/null 2>&1
+    elif check_command shasum; then
+        printf '%s  %s\n' "$checksum" "$file" | shasum -a 256 -c - > /dev/null 2>&1
+    else
+        log_error "Neither sha256sum nor shasum is available to verify downloads"
+        return 1
+    fi
+}
+
 # Cleanup function for trap
 cleanup() {
     local exit_code=$?
