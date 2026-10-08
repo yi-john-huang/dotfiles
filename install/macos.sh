@@ -171,7 +171,7 @@ install_alacritty() {
         log_info "✓ Alacritty installed"
     else
         log_warn "Alacritty installation failed"
-        return 1
+        return 0
     fi
 }
 
